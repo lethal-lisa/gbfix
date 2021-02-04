@@ -101,6 +101,7 @@ int main (int argc, char* argv[]) {
 			case 'v':
 				// Set verbose mode.
 				printf("Using verbose mode.\n");
+				rpParams.uFlags |= RPF_VERBOSE;
 				break;
 				
 			case '?':
