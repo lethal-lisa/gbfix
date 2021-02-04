@@ -125,7 +125,7 @@ int main (int argc, char* argv[]) {
 		PGBHEAD pgbHdr;
 		if ((pgbHdr = loadHeaderFromFile(rpParams.pszFileName)) == NULL) exit(EXIT_FAILURE);
 		
-		printf("%s ROM file size: %ldkB\n", rpParams.pszFileName, getRomSize(pgbHdr));
+		printf("%s ROM file size: %ldB\n", rpParams.pszFileName, getRomSize(pgbHdr));
 		
 		free(pgbHdr);
 		free(rpParams.pszFileName);
