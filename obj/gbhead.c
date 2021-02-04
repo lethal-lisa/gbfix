@@ -24,18 +24,13 @@
 
 #include "../inc/gbhead.h"
 
-#include <stddef.h>
-#include <errno.h>
+static inline PGBHEAD handleGbHdrIOErr (FILE* pFile, PGBHEAD pgbhHdr, const char* pszMsg);
 
 unsigned char mkGbHdrChksum (const PGBHEAD pHdr) {
 	
-	if (pHdr == NULL) {
-		errno = EFAULT;
-		//perror("Null pointer passed in mkGbHdrChksum.");
-		return 0;
-	}
+	if (pHdr == NULL) return 0;
 	
-	unsigned char* pTemp = (unsigned char*) pHdr;
+	//unsigned char* pTemp = (unsigned char*) pHdr;
 	unsigned long int uChkSum = 0;
 	
 	int iByte;
@@ -46,15 +41,50 @@ unsigned char mkGbHdrChksum (const PGBHEAD pHdr) {
 	
 }
 
-inline long getRomSize (const PGBHEAD pHdr) {
+inline long int getRomSize (const PGBHEAD pHdr) {
 	
-	if (pHdr == NULL) {
-		errno = EFAULT;
-		//perror("Null pointer passed in getRomSize.");
-		return 0;
-	}
+	if (pHdr == NULL) return 0;
 	
-	return (long)((32 << pHdr->uRomSize) * 1024);
+	return (long int)((32 << pHdr->uRomSize) * 1024);
+	
+}
+
+static inline PGBHEAD handleGbHdrIOErr (FILE* pFile, PGBHEAD pgbhHdr, const char* pszMsg) {
+	
+	if (pszMsg != NULL) perror(pszMsg);
+	
+	if (pFile != NULL && (fclose(pFile))) perror("Failed to close file.\n");
+	if (pgbhHdr) free(pgbhHdr);
+	
+	return pgbhHdr;
+	
+}
+
+PGBHEAD loadHeaderFromFile (const char* pszFileName) {
+	
+	FILE* pFile;
+	PGBHEAD pgbhHdr;
+	
+	// Allocate buffer for ROM header.
+	if ((pgbhHdr = malloc(sizeof(GBHEAD))) == NULL)
+		return handleGbHdrIOErr(pFile, pgbhHdr, "Error allocating buffer for ROM header.\n");
+	
+	// Open file.
+	if ((pFile = fopen(pszFileName, "rb")) == NULL)
+		return handleGbHdrIOErr(NULL, pgbhHdr, "Error opening ROM file.\n");
+	
+	// Seek to header offset.
+	if (fseek(pFile, 0x0100, SEEK_SET))
+		return handleGbHdrIOErr(pFile, pgbhHdr, "Error seeking to header.\n");
+	
+	// Read in header.
+	if (fread(pgbhHdr, sizeof(GBHEAD), 1, pFile) < 1)
+		return handleGbHdrIOErr(pFile, pgbhHdr, "Error reading header from file.\n");
+	
+	// Close file.
+	if (fclose(pFile)) perror("Error closing file.\n");
+	
+	return pgbhHdr;
 	
 }
 

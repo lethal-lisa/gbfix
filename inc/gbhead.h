@@ -40,7 +40,7 @@
 		Or
 		$0134-$013E:	Registration title.
 		$013F-$0142:	Manufacturer code.
-		$0134:			CGB flag.
+		$0143:			CGB flag.
 	$0144-$0145:	Licensee code (new).
 	$0146:			SGB flag.
 	$0147:			Cart type.
@@ -53,6 +53,10 @@
 	$014E-$014F:	Global checksum (big endian).
 	
 */
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
 
 #define CGBF_FUNCTIONS 0x80
 #define CGBF_PGB1 0x04
@@ -67,13 +71,33 @@
 
 #define LICENSEE_NEW 0x33
 
+/*typedef struct tagGBH_TITLE_OLD
+{
+	char szTitle[16];
+} __attribute__((packed, aligned(4))) GBH_TITLE_OLD;
+
+typedef struct tagGBH_TITLE_NEW
+{
+	char szTitle[11];
+	char strManufacturer[4];
+	unsigned char uCgbFlag;
+};*/
+
 typedef struct tagGBHEAD
 {
 	unsigned char uEntryPoint[4];
 	unsigned char uNintendoLogo[48];
-	char szTitle[11];
-	char strManufacturer[4];
-	unsigned char uCgbFlag;
+	//char szTitle[11];
+	//char strManufacturer[4];
+	//unsigned char uCgbFlag;
+	union tagTitle {
+		char szOldTitle[16];
+		struct tagNewTitle {
+			char szTitle[11];
+			char strManufacturer[4];
+			unsigned char uCgbFlag;
+		} newTitle;
+	} title;
 	unsigned char uLicensee[2];
 	unsigned char uSgbFlag;
 	unsigned char uCartType;
@@ -87,7 +111,8 @@ typedef struct tagGBHEAD
 } __attribute__((packed, aligned(4))) GBHEAD, *PGBHEAD;
 
 unsigned char mkGbHdrChksum (const PGBHEAD pHdr);
-inline long getRomSize (const PGBHEAD pHdr);
+long int getRomSize (const PGBHEAD pHdr);
+PGBHEAD loadHeaderFromFile (const char* pszFileName);
 
 #endif /* _GBHEAD_H_ */
 
