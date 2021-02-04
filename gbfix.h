@@ -25,9 +25,32 @@
 #ifndef _PATCHER_H_
 #define _PATCHER_H_
 
+#include <stddef.h>
+
+#include "inc/gbhead.h"
+
+enum RPFLAGS
+{
+	RPF_EXIT = 0x00000001,
+	RPF_UNKNOWNPARAM = 0x00000002,
+	RPF_VERBOSE = 0x00000004,
+	RPF_CFGOVERRIDE = 0x00000008,
+	RPF_ROMFILE = 0x00000100,
+	RPF_MASK = 0x0000010F
+};
+
+typedef struct tagRUN_PARAMS
+{
+	unsigned long int uFlags;
+	long int nExitCode;
+	size_t cchFileName;
+	char* pszFileName;
+} __attribute__((packed, aligned(4))) RUN_PARAMS, *PRUN_PARAMS;
+
 extern const char g_szAppName[];
 extern const char g_szAppVer[];
 
+inline void setExitCode (PRUN_PARAMS pParams, const long int nExitCode);
 void printGplNotice ();
 void printHelp ();
 

@@ -60,7 +60,7 @@ LD       := gcc
 OBJCOPY  := objcopy
 
 CFLAGS   =  -g -Wall -O3\
-	-fomit-frame-pointer -ffast-math -fno-strict-aliasing
+	-fomit-frame-pointer -ffast-math -fno-strict-aliasing -fshort-enums
 
 ifdef INCLUDE
 	CFLAGS += ${INCLUDE}

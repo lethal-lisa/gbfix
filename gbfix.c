@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <getopt.h>
 
 const char g_szAppName[] = "GBFix";
@@ -35,38 +36,50 @@ int main (int argc, char* argv[]) {
 	
 	printf("%s v%s\n\n", g_szAppName, g_szAppVer);
 	
+	RUN_PARAMS rpParams;
+	memset(&rpParams, 0, sizeof(RUN_PARAMS));
+	
 	// Process command-line arguments.
 	if (argc > 1) {
 		
-		int nOpt;
+		int nOpt; // getopt return value.
+		int iLongOpt; // Long option index.
 		while (1) {
 			
-			// Long option index.
-			int nOptionIndex = 0;
+			if (rpParams.uFlags & RPF_EXIT) break;
+			
+			// Reset long option index.
+			iLongOpt = 0;
 			
 			// Structure containing long options.
-			static struct option optLongOpts[4] = {
+			static struct option optLongOpts[] = {
 				{ "help", no_argument, 0, 'h' },
 				{ "gpl", no_argument, 0, 0 },
 				{ "file", required_argument, 0, 'f' },
+				{ "verbose", no_argument, 0, 'v' },
 				{ 0, 0, 0, 0}
 			};
 			
 			// Get options.
-			if ((nOpt = getopt_long(argc, argv, "hf:", optLongOpts, &nOptionIndex)) == -1) break;
+			if ((nOpt = getopt_long(argc, argv, "hf:v", optLongOpts, &iLongOpt)) == -1) {
+				setExitCode(&rpParams, EXIT_SUCCESS);
+				break;
+			}
 			
 			// Process options.
 			switch (nOpt) {
 			case 0:
 				// Process long options.
-				if (nOptionIndex > 0) {
-					switch (nOptionIndex) {
+				if (iLongOpt > 0) {
+					switch (iLongOpt) {
 					case 1:
 						printGplNotice();
-						exit(EXIT_SUCCESS);
+						setExitCode(&rpParams, EXIT_SUCCESS);
 						break;
+						
 					default:
-						fprintf(stderr, "Unsupported option: %s (%o)\n", optLongOpts[nOptionIndex].name, nOptionIndex);
+						fprintf(stderr, "Unsupported option: %s (%o)\n", optLongOpts[iLongOpt].name, iLongOpt);
+						
 					}
 				}
 				break;
@@ -74,31 +87,76 @@ int main (int argc, char* argv[]) {
 			case 'h':
 				// Show help message.
 				printHelp();
-				exit(EXIT_SUCCESS);
-				//break;
+				setExitCode(&rpParams, EXIT_SUCCESS);
+				break;
 				
 			case 'f':
 				// Select file.
-				printf("Using file: %s\n", optarg);
+				rpParams.pszFileName = malloc(strlen(optarg) * sizeof(char));
+				rpParams.cchFileName = strlen(rpParams.pszFileName);
+				strcpy(rpParams.pszFileName, optarg);
+				rpParams.uFlags |= RPF_ROMFILE;
+				break;
+				
+			case 'v':
+				// Set verbose mode.
+				printf("Using verbose mode.\n");
 				break;
 				
 			case '?':
 				// Unknown command.
+				rpParams.uFlags |= RPF_UNKNOWNPARAM;
 				break;
 				
 			default:
 				// Unknown getopt_long return value.
-				fprintf(stderr, "%s warning: getopt_long returned 0x%x\n", argv[0], nOpt);
-				exit(EXIT_FAILURE);
+				fprintf(stderr, "Error: getopt_long returned unknown value (0x%x).\n", nOpt);
+				setExitCode(&rpParams, EXIT_FAILURE);
 			}
 		}
 	} else {
 		fprintf(stderr, "No options specified.\nUse %s -h to see options.\n", argv[0]);
-		exit(EXIT_FAILURE);
+		setExitCode(&rpParams, EXIT_FAILURE);
 	}
+	
+	if (rpParams.uFlags & RPF_ROMFILE) {
+		
+		printf("Using file: %s\n", rpParams.pszFileName);
+		PGBHEAD pgbHdr;
+		if ((pgbHdr = loadHeaderFromFile(rpParams.pszFileName)) == NULL) exit(EXIT_FAILURE);
+		
+		printf("%s ROM file size: %ldkB\n", rpParams.pszFileName, getRomSize(pgbHdr));
+		
+		free(pgbHdr);
+		free(rpParams.pszFileName);
+		
+	}
+	
+	if (rpParams.uFlags & RPF_EXIT) exit(rpParams.nExitCode);
 	
 	// Exit program.
 	return EXIT_SUCCESS;
+	
+}
+
+inline void setExitCode (PRUN_PARAMS pParams, const long int nExitCode) {
+	
+	if (pParams == NULL) return;
+	
+	pParams->uFlags |= RPF_EXIT;
+	pParams->nExitCode = nExitCode;
+	
+}
+
+// Show help message.
+void printHelp () {
+	
+	printf("Help\n");
+	printf("\t-h/--help\t\tShow this help.\n");
+	printf("\t--gpl\t\t\tShow the GNU GPL3 notice.\n");
+	printf("\t-v/--verbose\t\tEnable verbose mode.\n");
+	printf("\t-f/--file <file>\tSet file to use to <file>.\n");
+	printf("\n");
 	
 }
 
@@ -119,17 +177,6 @@ GNU General Public License for more details.\n\
 along with this program; if not, write to the Free Software\n\
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,\n\
 MA 02110-1301, USA.\n\n");
-	
-}
-
-// Show help message.
-void printHelp () {
-	
-	printf("Help\n");
-	printf("\t-h/--help\t\tShow this help.\n");
-	printf("\t--gpl\t\t\tShow the GNU GPL3 notice.\n");
-	printf("\t-f/--file <file>\tSet file to use to <file>.\n");
-	printf("\n");
 	
 }
 
