@@ -30,7 +30,7 @@
 #include <getopt.h>
 
 const char g_szAppName[] = "GBFix";
-const char g_szAppVer[] = "0.0.100-proto";
+const char g_szAppVer[] = "0.1-proto";
 
 int main (int argc, char* argv[]) {
 	
