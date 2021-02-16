@@ -1,7 +1,7 @@
 /*
- * gbfix.h
+ * inc/runparam.h
  * 
- * GBFix - Main Module Header
+ * GBFix - Runtime Parameters Module Header
  * 
  * Copyright 2021 Lisa Murray
  * 
@@ -22,20 +22,31 @@
  * 
  */
 
-#ifndef _PATCHER_H_
-#define _PATCHER_H_
+#ifndef _RUNPARAM_H_
+#define _RUNPARAM_H_
 
-#include "inc/runparam.h"
-#include "inc/gbhead.h"
+#include <stddef.h>
 
-extern const char g_szAppName[];
-extern const char g_szAppVer[];
+enum RPFLAGS
+{
+	RPF_EXIT = 0x00000001,
+	RPF_UNKNOWNPARAM = 0x00000002,
+	RPF_VERBOSE = 0x00000004,
+	RPF_ROMFILE = 0x00000100,
+	RPF_MASK = 0x00000107
+};
 
-void printRomInfo (const PGBHEAD pgbHdr);
+typedef struct tagRUN_PARAMS
+{
+	unsigned long int uFlags;
+	long int nExitCode;
+	size_t cchFileName;
+	char* pszFileName;
+} __attribute__((packed, aligned(4))) RUN_PARAMS, *PRUN_PARAMS;
 
-void printGplNotice ();
-void printHelp ();
+long int setExitCode (PRUN_PARAMS pParams, const long int nExitCode);
+void doExit (PRUN_PARAMS pParams);
 
-#endif /* _PATCHER_H_ */
+#endif /* _RUNPARAM_H_ */
 
 // EOF

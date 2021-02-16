@@ -110,6 +110,8 @@ typedef struct tagGBHEAD
 	unsigned short uGlobalChkSum;
 } __attribute__((packed, aligned(4))) GBHEAD, *PGBHEAD;
 
+unsigned char isNewLicensee (const PGBHEAD pHdr);
+unsigned char getLicenseeCode (const PGBHEAD pHdr);
 unsigned char mkGbHdrChksum (const PGBHEAD pHdr);
 long int getRomSize (const PGBHEAD pHdr);
 PGBHEAD loadHeaderFromFile (const char* pszFileName);

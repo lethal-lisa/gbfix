@@ -49,6 +49,7 @@ LIBS     :=
 LIBDIRS  :=
 
 OBJS     := ${TARGET}.o
+OBJS     += ${SOURCES}/runparam.o
 OBJS     += ${SOURCES}/gbhead.o
 
 ## ---------------------------------------------------------------------

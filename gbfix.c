@@ -30,7 +30,7 @@
 #include <getopt.h>
 
 const char g_szAppName[] = "GBFix";
-const char g_szAppVer[] = "0.0-proto";
+const char g_szAppVer[] = "0.0.100-proto";
 
 int main (int argc, char* argv[]) {
 	
@@ -73,12 +73,15 @@ int main (int argc, char* argv[]) {
 				if (iLongOpt > 0) {
 					switch (iLongOpt) {
 					case 1:
+						// Print out GPL notice.
 						printGplNotice();
 						setExitCode(&rpParams, EXIT_SUCCESS);
 						break;
 						
 					default:
-						fprintf(stderr, "Unsupported option: %s (%o)\n", optLongOpts[iLongOpt].name, iLongOpt);
+						// Handle unsupported long option.
+						fprintf(stderr, "Error: Unsupported long option: %s (%d)\n", optLongOpts[iLongOpt].name, iLongOpt);
+						setExitCode(&rpParams, EXIT_FAILURE);
 						
 					}
 				}
@@ -92,16 +95,40 @@ int main (int argc, char* argv[]) {
 				
 			case 'f':
 				// Select file.
+				
+				if (rpParams.uFlags & RPF_ROMFILE || rpParams.pszFileName != NULL) {
+					fprintf(stderr, "Error: ROM file already selected. Cannot operate on two files.\n");
+					setExitCode(&rpParams, EXIT_FAILURE);
+					break;
+				}
+				
+				// Allocate string buffer.
 				rpParams.pszFileName = malloc(strlen(optarg) * sizeof(char));
-				rpParams.cchFileName = strlen(rpParams.pszFileName);
+				if (rpParams.pszFileName == NULL) {
+					perror("Could not allocate buffer for file name.\n");
+					setExitCode(&rpParams, EXIT_FAILURE);
+					break;
+				}
+				
+				// Get length of new string buffer.
+				if ((rpParams.cchFileName = strlen(rpParams.pszFileName)) <= 0) {
+					fprintf(stderr, "Error: File name buffer is of an invalid length (%lo chars).", rpParams.cchFileName);
+					setExitCode(&rpParams, EXIT_FAILURE);
+					break;
+				}
+				
+				// Copy into string buffer.
 				strcpy(rpParams.pszFileName, optarg);
+				
+				// Update flags.
 				rpParams.uFlags |= RPF_ROMFILE;
+				
 				break;
 				
 			case 'v':
 				// Set verbose mode.
-				printf("Using verbose mode.\n");
 				rpParams.uFlags |= RPF_VERBOSE;
+				printf("Using verbose mode.\n");
 				break;
 				
 			case '?':
@@ -111,41 +138,68 @@ int main (int argc, char* argv[]) {
 				
 			default:
 				// Unknown getopt_long return value.
-				fprintf(stderr, "Error: getopt_long returned unknown value (0x%x).\n", nOpt);
+				fprintf(stderr, "Error: getopt_long returned unknown value (0x%X).\n", nOpt);
 				setExitCode(&rpParams, EXIT_FAILURE);
 			}
 		}
 	} else {
-		fprintf(stderr, "No options specified.\nUse %s -h to see options.\n", argv[0]);
+		fprintf(stderr, "Error: No options specified.\nUse %s -h to see options.\n", argv[0]);
 		setExitCode(&rpParams, EXIT_FAILURE);
 	}
 	
 	if (rpParams.uFlags & RPF_ROMFILE) {
 		
-		printf("Using file: %s\n", rpParams.pszFileName);
-		PGBHEAD pgbHdr;
-		if ((pgbHdr = loadHeaderFromFile(rpParams.pszFileName)) == NULL) exit(EXIT_FAILURE);
+		// Check for file name buffer.
+		if (rpParams.pszFileName == NULL) {
+			fprintf(stderr, "Error: File name buffer not allocated.\n");
+			setExitCode(&rpParams, EXIT_FAILURE);
+			doExit(&rpParams);
+		}
 		
-		printf("%s ROM file size: %ldB\n", rpParams.pszFileName, getRomSize(pgbHdr));
+		// Print verbose mode information.
+		if (rpParams.uFlags & RPF_VERBOSE) {
+			printf("Using file: %s\n", rpParams.pszFileName);
+			printf("\n");
+		}
 		
-		free(pgbHdr);
-		free(rpParams.pszFileName);
+		// Load header.
+		PGBHEAD pgbHdr = loadHeaderFromFile(rpParams.pszFileName);
+		
+		// Print ROM info.
+		printRomInfo(pgbHdr);
+		
+		if (pgbHdr != NULL) free(pgbHdr);
 		
 	}
 	
-	if (rpParams.uFlags & RPF_EXIT) exit(rpParams.nExitCode);
+	doExit(&rpParams);
 	
 	// Exit program.
 	return EXIT_SUCCESS;
 	
 }
 
-inline void setExitCode (PRUN_PARAMS pParams, const long int nExitCode) {
+void printRomInfo (const PGBHEAD pgbHdr) {
 	
-	if (pParams == NULL) return;
+	if (pgbHdr == NULL) {
+		fprintf(stderr, "Bad header info structure.\n");
+		return;
+	}
 	
-	pParams->uFlags |= RPF_EXIT;
-	pParams->nExitCode = nExitCode;
+	printf("ROM Info:\n\n");
+	printf("\tLicensee Code:\t\t0x%X", getLicenseeCode(pgbHdr));
+	if (isNewLicensee(pgbHdr)) {
+		printf(" (New type)\n");
+	} else {
+		printf(" (Old type)\n");
+	}
+	printf("\tROM Size:\t\t%ldkB (%ldB)\n", getRomSize(pgbHdr), getRomSize(pgbHdr) * 1024);
+	printf("\tRegion Code:\t\t0x%X\n", pgbHdr->uRegion);
+	printf("\tROM Version:\t\t0x%X\n", pgbHdr->uRomVer);
+	printf("\tHeader Checksum:\t0x%X\n", pgbHdr->uHdrChkSum);
+	printf("\tGlobal Checksum:\t0x%X\n", pgbHdr->uGlobalChkSum);
+	
+	printf("\n");
 	
 }
 

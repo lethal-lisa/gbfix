@@ -1,7 +1,7 @@
 /*
- * gbfix.h
+ * obj/runparam.c
  * 
- * GBFix - Main Module Header
+ * GBFix - Runtime Parameters Module
  * 
  * Copyright 2021 Lisa Murray
  * 
@@ -22,20 +22,37 @@
  * 
  */
 
-#ifndef _PATCHER_H_
-#define _PATCHER_H_
+#include "../inc/runparam.h"
+#include <stdlib.h>
 
-#include "inc/runparam.h"
-#include "inc/gbhead.h"
+long int setExitCode (PRUN_PARAMS pParams, const long int nExitCode) {
+	
+	// Make sure pParams is non-null.
+	if (pParams == NULL) return nExitCode;
+	
+	// Set exit flag and code.
+	pParams->uFlags |= RPF_EXIT;
+	pParams->nExitCode = nExitCode;
+	
+	// Return the exit code.
+	return nExitCode;
+	
+}
 
-extern const char g_szAppName[];
-extern const char g_szAppVer[];
-
-void printRomInfo (const PGBHEAD pgbHdr);
-
-void printGplNotice ();
-void printHelp ();
-
-#endif /* _PATCHER_H_ */
+void doExit (PRUN_PARAMS pParams) {
+	
+	// Make sure pParams is non-null.
+	if (pParams == NULL) exit(EXIT_FAILURE);
+	
+	// Deallocate runtime params.
+	if (pParams->pszFileName != NULL) free(pParams->pszFileName);
+	
+	// Check for specific exit flag.
+	if ((pParams->uFlags & RPF_MASK) & RPF_EXIT) exit(pParams->nExitCode);
+	
+	// Use generic exit.
+	exit(EXIT_SUCCESS);
+	
+}
 
 // EOF

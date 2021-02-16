@@ -24,7 +24,30 @@
 
 #include "../inc/gbhead.h"
 
-static inline PGBHEAD handleGbHdrIOErr (FILE* pFile, PGBHEAD pgbhHdr, const char* pszMsg);
+static PGBHEAD handleGbHdrIOErr (FILE* pFile, PGBHEAD pgbhHdr, const char* pszMsg);
+
+unsigned char isNewLicensee (const PGBHEAD pHdr) {
+	
+	if (pHdr->uOldLicensee == LICENSEE_NEW) return -1;
+	return 0;
+	
+}
+
+unsigned char getLicenseeCode (const PGBHEAD pHdr) {
+	
+	if (pHdr == NULL) return 0;
+	
+	if (isNewLicensee(pHdr)) {
+		if (pHdr->uLicensee[0] != pHdr->uLicensee[1]) {
+			fprintf(stderr, "New licensee codes do not match.");
+			return 0;
+		}
+		return pHdr->uLicensee[0];
+	}
+	
+	return pHdr->uOldLicensee;
+	
+}
 
 unsigned char mkGbHdrChksum (const PGBHEAD pHdr) {
 	
@@ -41,15 +64,15 @@ unsigned char mkGbHdrChksum (const PGBHEAD pHdr) {
 	
 }
 
-inline long int getRomSize (const PGBHEAD pHdr) {
+long int getRomSize (const PGBHEAD pHdr) {
 	
 	if (pHdr == NULL) return 0;
 	
-	return (long int)((32 << pHdr->uRomSize) * 1024);
+	return (long int)(32 << pHdr->uRomSize);
 	
 }
 
-static inline PGBHEAD handleGbHdrIOErr (FILE* pFile, PGBHEAD pgbhHdr, const char* pszMsg) {
+static PGBHEAD handleGbHdrIOErr (FILE* pFile, PGBHEAD pgbhHdr, const char* pszMsg) {
 	
 	if (pszMsg != NULL) perror(pszMsg);
 	
