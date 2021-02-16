@@ -25,17 +25,14 @@
 #include "../inc/runparam.h"
 #include <stdlib.h>
 
-long int setExitCode (PRUN_PARAMS pParams, const long int nExitCode) {
+void setExitCode (PRUN_PARAMS pParams, const long int nExitCode) {
 	
 	// Make sure pParams is non-null.
-	if (pParams == NULL) return nExitCode;
+	if (pParams == NULL) return;
 	
 	// Set exit flag and code.
 	pParams->uFlags |= RPF_EXIT;
 	pParams->nExitCode = nExitCode;
-	
-	// Return the exit code.
-	return nExitCode;
 	
 }
 

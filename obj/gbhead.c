@@ -22,9 +22,15 @@
  * 
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+
 #include "../inc/gbhead.h"
 
-static PGBHEAD handleGbHdrIOErr (FILE* pFile, PGBHEAD pgbhHdr, const char* pszMsg);
+const char s_pszUnknown[] = "Unknown";
+
+//static PGBHEAD handleGbHdrIOErr (FILE* pFile, PGBHEAD pgbhHdr, const char* pszMsg);
 
 unsigned char isNewLicensee (const PGBHEAD pHdr) {
 	
@@ -39,13 +45,32 @@ unsigned char getLicenseeCode (const PGBHEAD pHdr) {
 	
 	if (isNewLicensee(pHdr)) {
 		if (pHdr->uLicensee[0] != pHdr->uLicensee[1]) {
-			fprintf(stderr, "New licensee codes do not match.");
+			fprintf(stderr, "Error: New licensee codes do not match.");
 			return 0;
 		}
 		return pHdr->uLicensee[0];
 	}
 	
 	return pHdr->uOldLicensee;
+	
+}
+
+const char* getLicenseeTypeStr (const PGBHEAD pHdr) {
+	
+	if (pHdr == NULL) return s_pszUnknown;
+	
+	if (isNewLicensee(pHdr)) return "New";
+	return "Old";
+	
+}
+
+const char* getRegionStr (const PGBHEAD pHdr) {
+	
+	if (pHdr == NULL) return s_pszUnknown;
+	
+	if (pHdr->uRegion >= REGION_INTERNATIONAL) return "International";
+	if (pHdr->uRegion == REGION_JAPAN) return "Japan";
+	return s_pszUnknown;
 	
 }
 
@@ -72,7 +97,7 @@ long int getRomSize (const PGBHEAD pHdr) {
 	
 }
 
-static PGBHEAD handleGbHdrIOErr (FILE* pFile, PGBHEAD pgbhHdr, const char* pszMsg) {
+/*static PGBHEAD handleGbHdrIOErr (FILE* pFile, PGBHEAD pgbhHdr, const char* pszMsg) {
 	
 	if (pszMsg != NULL) perror(pszMsg);
 	
@@ -81,13 +106,23 @@ static PGBHEAD handleGbHdrIOErr (FILE* pFile, PGBHEAD pgbhHdr, const char* pszMs
 	
 	return pgbhHdr;
 	
-}
+}*/
 
-PGBHEAD loadHeaderFromFile (const char* pszFileName) {
+int loadHeaderFromFile (const char* pszFileName, PGBHEAD pHdr) {
 	
 	FILE* pFile;
-	PGBHEAD pgbhHdr;
 	
+	if ((pFile = fopen(pszFileName, "rb")) == NULL) return -1;
+	
+	if (fseek(pFile, 0x0100, SEEK_SET) || (fread(pHdr, sizeof(GBHEAD), 1, pFile) < 1)) {
+		fclose(pFile);
+		return -1;
+	}
+	
+	fclose(pFile);
+	return 0;
+	
+	/*
 	// Allocate buffer for ROM header.
 	if ((pgbhHdr = malloc(sizeof(GBHEAD))) == NULL)
 		return handleGbHdrIOErr(pFile, pgbhHdr, "Error allocating buffer for ROM header.\n");
@@ -108,6 +143,28 @@ PGBHEAD loadHeaderFromFile (const char* pszFileName) {
 	if (fclose(pFile)) perror("Error closing file.\n");
 	
 	return pgbhHdr;
+	*/
+	
+}
+
+int saveHeaderToFile (const char* pszFileName, const PGBHEAD pHdr) {
+	
+	FILE* pFile;
+	
+	if (pHdr == NULL) return -1;
+	
+	if ((pFile = fopen(pszFileName, "wb")) == NULL) {
+		free(pHdr);
+		return -1;
+	}
+	
+	if (fseek(pFile, 0x0100, SEEK_SET) || (fwrite(pHdr, sizeof(GBHEAD), 1, pFile) < 1)) {
+		fclose(pFile);
+		return -1;
+	}
+	
+	fclose(pFile);
+	return 0;
 	
 }
 

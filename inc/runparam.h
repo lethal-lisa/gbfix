@@ -44,7 +44,7 @@ typedef struct tagRUN_PARAMS
 	char* pszFileName;
 } __attribute__((packed, aligned(4))) RUN_PARAMS, *PRUN_PARAMS;
 
-long int setExitCode (PRUN_PARAMS pParams, const long int nExitCode);
+void setExitCode (PRUN_PARAMS pParams, const long int nExitCode);
 void doExit (PRUN_PARAMS pParams);
 
 #endif /* _RUNPARAM_H_ */

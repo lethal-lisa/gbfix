@@ -22,15 +22,16 @@
  * 
  */
 
-#include "gbfix.h"
-
+#include <errno.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
+
+#include "gbfix.h"
 
 const char g_szAppName[] = "GBFix";
-const char g_szAppVer[] = "0.1-proto";
+const char g_szAppVer[] = "0.1.1-proto";
 
 int main (int argc, char* argv[]) {
 	
@@ -106,16 +107,13 @@ int main (int argc, char* argv[]) {
 				rpParams.pszFileName = malloc(strlen(optarg) * sizeof(char));
 				if (rpParams.pszFileName == NULL) {
 					perror("Could not allocate buffer for file name.\n");
+					errno = 0;
 					setExitCode(&rpParams, EXIT_FAILURE);
 					break;
 				}
 				
 				// Get length of new string buffer.
-				if ((rpParams.cchFileName = strlen(rpParams.pszFileName)) <= 0) {
-					fprintf(stderr, "Error: File name buffer is of an invalid length (%lo chars).", rpParams.cchFileName);
-					setExitCode(&rpParams, EXIT_FAILURE);
-					break;
-				}
+				rpParams.cchFileName = strlen(rpParams.pszFileName);
 				
 				// Copy into string buffer.
 				strcpy(rpParams.pszFileName, optarg);
@@ -158,17 +156,31 @@ int main (int argc, char* argv[]) {
 		
 		// Print verbose mode information.
 		if (rpParams.uFlags & RPF_VERBOSE) {
-			printf("Using file: %s\n", rpParams.pszFileName);
+			printf("Using file: \"%s\"\n", rpParams.pszFileName);
 			printf("\n");
 		}
 		
+		// Allocate space for header.
+		PGBHEAD pgbHdr;
+		if ((pgbHdr = malloc(sizeof(GBHEAD))) == NULL) {
+			perror("Could not allocate buffer for header.\n");
+			errno = 0;
+			setExitCode(&rpParams, EXIT_FAILURE);
+			doExit(&rpParams);
+		}
+		
 		// Load header.
-		PGBHEAD pgbHdr = loadHeaderFromFile(rpParams.pszFileName);
+		if (loadHeaderFromFile(rpParams.pszFileName, pgbHdr)) {
+			perror("Failed to load ROM header.\n");
+			errno = 0;
+			setExitCode(&rpParams, EXIT_FAILURE);
+			doExit(&rpParams);
+		}
 		
 		// Print ROM info.
 		printRomInfo(pgbHdr);
 		
-		if (pgbHdr != NULL) free(pgbHdr);
+		free(pgbHdr);
 		
 	}
 	
@@ -187,13 +199,10 @@ void printRomInfo (const PGBHEAD pgbHdr) {
 	}
 	
 	printf("ROM Info:\n\n");
-	printf("\tLicensee Code:\t\t0x%X", getLicenseeCode(pgbHdr));
-	if (isNewLicensee(pgbHdr)) {
-		printf(" (New type)\n");
-	} else {
-		printf(" (Old type)\n");
-	}
+	printf("\tLicensee Code:\t\t0x%X\n", getLicenseeCode(pgbHdr));
+	printf("\tLicensee Code Type:\t%s\n", getLicenseeTypeStr(pgbHdr));
 	printf("\tROM Size:\t\t%ldkB (%ldB)\n", getRomSize(pgbHdr), getRomSize(pgbHdr) * 1024);
+	printf("\tRegion:\t\t\t%s\n", getRegionStr(pgbHdr));
 	printf("\tRegion Code:\t\t0x%X\n", pgbHdr->uRegion);
 	printf("\tROM Version:\t\t0x%X\n", pgbHdr->uRomVer);
 	printf("\tHeader Checksum:\t0x%X\n", pgbHdr->uHdrChkSum);

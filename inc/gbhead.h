@@ -54,42 +54,31 @@
 	
 */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
 
+
+// Define flags:
+// CGB feature flags:
 #define CGBF_FUNCTIONS 0x80
 #define CGBF_PGB1 0x04
 #define CGBF_PGB2 0x08
 #define CGBF_CGBONLY 0x40
 #define CGBF_MASK 0xCC
 
+// SGB feature flags:
 #define SGBF_SGBSUPPORT 0x03
 
+// Region IDs:
 #define REGION_JAPAN 0x00
 #define REGION_INTERNATIONAL 0x01
 
+// New licensee code.
 #define LICENSEE_NEW 0x33
 
-/*typedef struct tagGBH_TITLE_OLD
-{
-	char szTitle[16];
-} __attribute__((packed, aligned(4))) GBH_TITLE_OLD;
-
-typedef struct tagGBH_TITLE_NEW
-{
-	char szTitle[11];
-	char strManufacturer[4];
-	unsigned char uCgbFlag;
-};*/
-
+// GameBoy ROM header structure.
 typedef struct tagGBHEAD
 {
 	unsigned char uEntryPoint[4];
 	unsigned char uNintendoLogo[48];
-	//char szTitle[11];
-	//char strManufacturer[4];
-	//unsigned char uCgbFlag;
 	union tagTitle {
 		char szOldTitle[16];
 		struct tagNewTitle {
@@ -110,11 +99,19 @@ typedef struct tagGBHEAD
 	unsigned short uGlobalChkSum;
 } __attribute__((packed, aligned(4))) GBHEAD, *PGBHEAD;
 
+// Licensee code functions.
 unsigned char isNewLicensee (const PGBHEAD pHdr);
 unsigned char getLicenseeCode (const PGBHEAD pHdr);
+
+const char* getLicenseeTypeStr (const PGBHEAD pHdr);
+const char* getRegionStr (const PGBHEAD pHdr);
+
 unsigned char mkGbHdrChksum (const PGBHEAD pHdr);
 long int getRomSize (const PGBHEAD pHdr);
-PGBHEAD loadHeaderFromFile (const char* pszFileName);
+
+// File I/O functions.
+int loadHeaderFromFile (const char* pszFileName, PGBHEAD pHdr);
+int saveHeaderToFile (const char* pszFileName, const PGBHEAD pHdr);
 
 #endif /* _GBHEAD_H_ */
 
