@@ -26,7 +26,6 @@
 #define _GBHEAD_H_
 
 /*
-	
 	GameBoy Mask ROM Layout:
 	
 	$0000-$00FF:	Interrupt handler information.
@@ -51,18 +50,29 @@
 	$014C:			Software version.
 	$014D:			Header checksum.
 	$014E-$014F:	Global checksum (big endian).
-	
 */
 
+// ---------------------------------------------------------------------
+// Define flags.
+// ---------------------------------------------------------------------
 
+// ---------------------------------------------------------------------
+// Flags for structure tagGBHEAD.
+// ---------------------------------------------------------------------
 
-// Define flags:
 // CGB feature flags:
-#define CGBF_FUNCTIONS 0x80
+/*#define CGBF_FUNCTIONS 0x80
 #define CGBF_PGB1 0x04
 #define CGBF_PGB2 0x08
 #define CGBF_CGBONLY 0x40
-#define CGBF_MASK 0xCC
+#define CGBF_MASK 0xCC*/
+enum {
+	CGBF_FUNC = 0x80,
+	CGBF_PGB1 = 0x04,
+	CGBF_PGB2 = 0x08,
+	CGBF_CGBONLY = 0x40,
+	CGBF_MASK = 0xCC
+};
 
 // SGB feature flags:
 #define SGBF_SGBSUPPORT 0x03
@@ -74,13 +84,34 @@
 // New licensee code.
 #define LICENSEE_NEW 0x33
 
+// ---------------------------------------------------------------------
+// Flags for structure tagHDR_UPDATES.
+// ---------------------------------------------------------------------
+
+enum {
+	UPF_TITLE = 0x0001,
+	UPF_MANU = 0x0002,
+	UPF_CGBF = 0x0004,
+	UPF_LICENSE = 0x0008,
+	UPF_SGBF = 0x0010,
+	UPF_CARTTYPE = 0x0020,
+	UPF_RAMSIZE = 0x0040,
+	UPF_REGION = 0x0080,
+	UPF_ROMVER = 0x0100,
+	UPF_MASK = 0x01FF
+};
+
+// ---------------------------------------------------------------------
+// Define structures.
+// ---------------------------------------------------------------------
+
 // GameBoy ROM header structure.
 typedef struct tagGBHEAD
 {
 	unsigned char uEntryPoint[4];
 	unsigned char uNintendoLogo[48];
 	union tagTitle {
-		char szOldTitle[16];
+		char szTitle[16];
 		struct tagNewTitle {
 			char szTitle[11];
 			char strManufacturer[4];
@@ -99,6 +130,17 @@ typedef struct tagGBHEAD
 	unsigned short uGlobalChkSum;
 } __attribute__((packed, aligned(4))) GBHEAD, *PGBHEAD;
 
+// Structure containing information about what to update in the ROM.
+typedef struct tagHDR_UPDATES
+{
+	unsigned long uFlags; // Flags about what is to be updated.
+	GBHEAD hdr; // Fake header containing new information.
+} __attribute__((packed, aligned(4))) HDR_UPDATES, *PHDR_UPDATES;
+
+// ---------------------------------------------------------------------
+// Define functions.
+// ---------------------------------------------------------------------
+
 // Licensee code functions.
 int isNewLicensee (const PGBHEAD pHdr);
 unsigned char getLicenseeCode (const PGBHEAD pHdr);
@@ -106,8 +148,9 @@ unsigned char getLicenseeCode (const PGBHEAD pHdr);
 const char* getLicenseeTypeStr (const PGBHEAD pHdr);
 const char* getRegionStr (const PGBHEAD pHdr);
 
-unsigned char mkGbHdrChksum (const PGBHEAD pHdr);
+unsigned short int correctGlobalChkSum (const PGBHEAD pHdr);
 long int getRomSize (const PGBHEAD pHdr);
+unsigned char mkGbHdrChksum (const PGBHEAD pHdr);
 
 // File I/O functions.
 long int loadHeaderFromFile (const char* pszFileName, PGBHEAD pHdr);

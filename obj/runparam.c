@@ -22,8 +22,11 @@
  * 
  */
 
-#include "../inc/runparam.h"
+// Include used C header(s):
 #include <stdlib.h>
+
+// Include module header(s):
+#include "../inc/runparam.h"
 
 void setExitCode (PRUN_PARAMS pParams, const long int nExitCode) {
 	

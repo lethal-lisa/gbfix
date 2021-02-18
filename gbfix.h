@@ -22,20 +22,24 @@
  * 
  */
 
-#ifndef _PATCHER_H_
-#define _PATCHER_H_
+#ifndef _GBFIX_H_
+#define _GBFIX_H_
 
+// Include module headers.
 #include "inc/runparam.h"
 #include "inc/gbhead.h"
 
+// Declare external variables and constants:
 extern const char g_szAppName[];
 extern const char g_szAppVer[];
+extern const char g_szDivider[];
 
+// Declare functions:
 void printRomInfo (const PGBHEAD pgbHdr);
 
 void printGplNotice ();
 void printHelp ();
 
-#endif /* _PATCHER_H_ */
+#endif /* _GBFIX_H_ */
 
 // EOF

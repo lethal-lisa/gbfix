@@ -22,10 +22,13 @@
  * 
  */
 
+// Include used C header(s):
+#include <endian.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
 
+// Include module header(s):
 #include "../inc/gbhead.h"
 
 const char s_pszUnknown[] = "Unknown";
@@ -53,8 +56,8 @@ unsigned char getLicenseeCode (const PGBHEAD pHdr) {
 	
 	if (isNewLicensee(pHdr)) {
 		if (pHdr->uLicensee[0] != pHdr->uLicensee[1]) {
-			fprintf(stderr, "Error: New licensee codes do not match.");
-			return 0;
+			fprintf(stderr, "Error: New licensee codes do not match.\n");
+			return pHdr->uLicensee[0];
 		}
 		return pHdr->uLicensee[0];
 	}
@@ -90,6 +93,33 @@ const char* getRegionStr (const PGBHEAD pHdr) {
 	
 }
 
+unsigned short int correctGlobalChkSum (const PGBHEAD pHdr) {
+	
+	if (pHdr == NULL) {
+		errno = EFAULT;
+		return 0;
+	}
+	
+	#if __BYTE_ORDER == __LITTLE_ENDIAN
+		return be16toh(pHdr->uGlobalChkSum);
+	#else
+		return pHdr->uGlobalChkSum;
+	#endif
+	
+}
+
+// Returns the ROM size in kilobytes.
+long int getRomSize (const PGBHEAD pHdr) {
+	
+	if (pHdr == NULL) {
+		errno = EFAULT;
+		return 0;
+	}
+	
+	return (long int)(32 << pHdr->uRomSize);
+	
+}
+
 // Generates a header checksum.
 unsigned char mkGbHdrChksum (const PGBHEAD pHdr) {
 	
@@ -106,18 +136,6 @@ unsigned char mkGbHdrChksum (const PGBHEAD pHdr) {
 		uChkSum = uChkSum - ((unsigned char*) pHdr)[iByte] - 1;
 	
 	return (unsigned char)(uChkSum & 0xFF);
-	
-}
-
-// Returns the ROM size in kilobytes.
-long int getRomSize (const PGBHEAD pHdr) {
-	
-	if (pHdr == NULL) {
-		errno = EFAULT;
-		return 0;
-	}
-	
-	return (long int)(32 << pHdr->uRomSize);
 	
 }
 
