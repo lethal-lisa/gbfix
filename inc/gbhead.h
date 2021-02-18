@@ -100,7 +100,7 @@ typedef struct tagGBHEAD
 } __attribute__((packed, aligned(4))) GBHEAD, *PGBHEAD;
 
 // Licensee code functions.
-unsigned char isNewLicensee (const PGBHEAD pHdr);
+int isNewLicensee (const PGBHEAD pHdr);
 unsigned char getLicenseeCode (const PGBHEAD pHdr);
 
 const char* getLicenseeTypeStr (const PGBHEAD pHdr);
@@ -110,8 +110,8 @@ unsigned char mkGbHdrChksum (const PGBHEAD pHdr);
 long int getRomSize (const PGBHEAD pHdr);
 
 // File I/O functions.
-int loadHeaderFromFile (const char* pszFileName, PGBHEAD pHdr);
-int saveHeaderToFile (const char* pszFileName, const PGBHEAD pHdr);
+long int loadHeaderFromFile (const char* pszFileName, PGBHEAD pHdr);
+long int saveHeaderToFile (const char* pszFileName, const PGBHEAD pHdr);
 
 #endif /* _GBHEAD_H_ */
 

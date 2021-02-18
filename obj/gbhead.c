@@ -30,18 +30,26 @@
 
 const char s_pszUnknown[] = "Unknown";
 
-//static PGBHEAD handleGbHdrIOErr (FILE* pFile, PGBHEAD pgbhHdr, const char* pszMsg);
-
-unsigned char isNewLicensee (const PGBHEAD pHdr) {
+// Returns nonzero if licensee is of new type.
+int isNewLicensee (const PGBHEAD pHdr) {
+	
+	if (pHdr == NULL) {
+		errno = EFAULT;
+		return 0;
+	}
 	
 	if (pHdr->uOldLicensee == LICENSEE_NEW) return -1;
 	return 0;
 	
 }
 
+// Obtains the licensee code.
 unsigned char getLicenseeCode (const PGBHEAD pHdr) {
 	
-	if (pHdr == NULL) return 0;
+	if (pHdr == NULL) {
+		errno = EFAULT;
+		return 0;
+	}
 	
 	if (isNewLicensee(pHdr)) {
 		if (pHdr->uLicensee[0] != pHdr->uLicensee[1]) {
@@ -55,18 +63,26 @@ unsigned char getLicenseeCode (const PGBHEAD pHdr) {
 	
 }
 
+// Get the licensee type as a string.
 const char* getLicenseeTypeStr (const PGBHEAD pHdr) {
 	
-	if (pHdr == NULL) return s_pszUnknown;
+	if (pHdr == NULL) {
+		errno = EFAULT;
+		return s_pszUnknown;
+	}
 	
 	if (isNewLicensee(pHdr)) return "New";
 	return "Old";
 	
 }
 
+// Get the ROM region as a string.
 const char* getRegionStr (const PGBHEAD pHdr) {
 	
-	if (pHdr == NULL) return s_pszUnknown;
+	if (pHdr == NULL) {
+		errno = EFAULT;
+		return s_pszUnknown;
+	}
 	
 	if (pHdr->uRegion >= REGION_INTERNATIONAL) return "International";
 	if (pHdr->uRegion == REGION_JAPAN) return "Japan";
@@ -74,95 +90,82 @@ const char* getRegionStr (const PGBHEAD pHdr) {
 	
 }
 
+// Generates a header checksum.
 unsigned char mkGbHdrChksum (const PGBHEAD pHdr) {
 	
-	if (pHdr == NULL) return 0;
+	if (pHdr == NULL) {
+		errno = EFAULT;
+		return 0;
+	}
 	
-	//unsigned char* pTemp = (unsigned char*) pHdr;
 	unsigned long int uChkSum = 0;
 	
 	int iByte;
-	for (iByte = 0x34; iByte < 0x4C; iByte++)
+	//for (iByte = 0x34; iByte < 0x4C; iByte++)
+	for (iByte = 0; iByte < sizeof(GBHEAD); iByte++)
 		uChkSum = uChkSum - ((unsigned char*) pHdr)[iByte] - 1;
 	
 	return (unsigned char)(uChkSum & 0xFF);
 	
 }
 
+// Returns the ROM size in kilobytes.
 long int getRomSize (const PGBHEAD pHdr) {
 	
-	if (pHdr == NULL) return 0;
+	if (pHdr == NULL) {
+		errno = EFAULT;
+		return 0;
+	}
 	
 	return (long int)(32 << pHdr->uRomSize);
 	
 }
 
-/*static PGBHEAD handleGbHdrIOErr (FILE* pFile, PGBHEAD pgbhHdr, const char* pszMsg) {
+// Loads the header in from a file.
+long int loadHeaderFromFile (const char* pszFileName, PGBHEAD pHdr) {
 	
-	if (pszMsg != NULL) perror(pszMsg);
-	
-	if (pFile != NULL && (fclose(pFile))) perror("Failed to close file.\n");
-	if (pgbhHdr) free(pgbhHdr);
-	
-	return pgbhHdr;
-	
-}*/
-
-int loadHeaderFromFile (const char* pszFileName, PGBHEAD pHdr) {
+	if (pHdr == NULL) {
+		errno = EFAULT;
+		return -1;
+	}
 	
 	FILE* pFile;
 	
+	// Open the file for binary read.
 	if ((pFile = fopen(pszFileName, "rb")) == NULL) return -1;
 	
+	// Seek to header offset and read the header in.
 	if (fseek(pFile, 0x0100, SEEK_SET) || (fread(pHdr, sizeof(GBHEAD), 1, pFile) < 1)) {
 		fclose(pFile);
 		return -1;
 	}
 	
+	// Close the file.
 	fclose(pFile);
 	return 0;
 	
-	/*
-	// Allocate buffer for ROM header.
-	if ((pgbhHdr = malloc(sizeof(GBHEAD))) == NULL)
-		return handleGbHdrIOErr(pFile, pgbhHdr, "Error allocating buffer for ROM header.\n");
-	
-	// Open file.
-	if ((pFile = fopen(pszFileName, "rb")) == NULL)
-		return handleGbHdrIOErr(NULL, pgbhHdr, "Error opening ROM file.\n");
-	
-	// Seek to header offset.
-	if (fseek(pFile, 0x0100, SEEK_SET))
-		return handleGbHdrIOErr(pFile, pgbhHdr, "Error seeking to header.\n");
-	
-	// Read in header.
-	if (fread(pgbhHdr, sizeof(GBHEAD), 1, pFile) < 1)
-		return handleGbHdrIOErr(pFile, pgbhHdr, "Error reading header from file.\n");
-	
-	// Close file.
-	if (fclose(pFile)) perror("Error closing file.\n");
-	
-	return pgbhHdr;
-	*/
-	
 }
 
-int saveHeaderToFile (const char* pszFileName, const PGBHEAD pHdr) {
+// Saves the header to a file.
+long int saveHeaderToFile (const char* pszFileName, const PGBHEAD pHdr) {
 	
-	FILE* pFile;
-	
-	if (pHdr == NULL) return -1;
-	
-	if ((pFile = fopen(pszFileName, "wb")) == NULL) {
-		free(pHdr);
+	if (pHdr == NULL) {
+		errno = EFAULT;
 		return -1;
 	}
 	
+	FILE* pFile;
+	
+	// Open the file for binary write.
+	if ((pFile = fopen(pszFileName, "wb")) == NULL) return -1;
+	
+	// Seek to header offset and write in the header.
 	if (fseek(pFile, 0x0100, SEEK_SET) || (fwrite(pHdr, sizeof(GBHEAD), 1, pFile) < 1)) {
 		fclose(pFile);
 		return -1;
 	}
 	
+	// Close the file.
 	fclose(pFile);
 	return 0;
 	
