@@ -61,11 +61,6 @@
 // ---------------------------------------------------------------------
 
 // CGB feature flags:
-/*#define CGBF_FUNCTIONS 0x80
-#define CGBF_PGB1 0x04
-#define CGBF_PGB2 0x08
-#define CGBF_CGBONLY 0x40
-#define CGBF_MASK 0xCC*/
 enum {
 	CGBF_FUNC = 0x80,
 	CGBF_PGB1 = 0x04,
