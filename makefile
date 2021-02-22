@@ -49,8 +49,9 @@ LIBS     :=
 LIBDIRS  :=
 
 OBJS     := ${TARGET}.o
-OBJS     += ${SOURCES}/runparam.o
 OBJS     += ${SOURCES}/gbhead.o
+OBJS     += ${SOURCES}/messages.o
+OBJS     += ${SOURCES}/runparam.o
 
 ## ---------------------------------------------------------------------
 ## Set flags for code generation.
