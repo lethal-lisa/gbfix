@@ -33,8 +33,7 @@
 #include "gbfix.h"
 
 const char g_szAppName[] = "GBFix";
-const char g_szAppVer[] = "0.2-proto";
-const char g_szDivider[] = "\n--[ %s ]--\n";
+const char g_szAppVer[] = "0.2.1-proto";
 
 int main (int argc, char* argv[]) {
 	
@@ -53,11 +52,6 @@ int main (int argc, char* argv[]) {
 		int iLongOpt; // Long option index.
 		while (1) {
 			
-			if (rpParams.uFlags & RPF_EXIT) break;
-			
-			// Reset long option index.
-			iLongOpt = 0;
-			
 			// Structure containing long options.
 			static struct option optLongOpts[] = {
 				{ "help", no_argument, 0, 'h' },
@@ -69,11 +63,20 @@ int main (int argc, char* argv[]) {
 				{ "region", required_argument, 0, 'r' },
 				{ "sgbflags", required_argument, 0, 's' },
 				{ "romver", required_argument, 0, 'V' },
+				{ "title", required_argument, 0, 't' },
+				{ "manufacturer", required_argument, 0, 'm' },
+				{ "cgbflags", required_argument, 0, 'c' },
+				{ "carttype", required_argument, 0, 'C' },
+				{ "ramsize", required_argument, 0, 'R' },
 				{ 0, 0, 0, 0}
 			};
 			
+			// Exit if necessary.
+			if (rpParams.uFlags & RPF_EXIT) break;
+			
 			// Get options.
-			if ((nOpt = getopt_long(argc, argv, "hf:vr:s:V:", optLongOpts, &iLongOpt)) == -1) {
+			iLongOpt = 0; // Reset long option index.
+			if ((nOpt = getopt_long(argc, argv, "hf:vdr:s:V:t:m:c:C:R:", optLongOpts, &iLongOpt)) == -1) {
 				setExitCode(&rpParams, EXIT_SUCCESS);
 				break;
 			}
@@ -141,12 +144,17 @@ int main (int argc, char* argv[]) {
 				printf("Using verbose mode.\n");
 				break;
 				
+			case 'd':
+				// Enable dry-run.
+				rpParams.uFlags |= RPF_DRYRUN;
+				break;
+				
 			case 'r':
 				// Set ROM region.
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
 				hdrUpdates.uFlags |= UPF_REGION;
-				hdrUpdates.hdr.uRegion = (unsigned char)strtoul(optarg, NULL, 0);
+				hdrUpdates.hdr.uRegion = (uint8_t)strtoul(optarg, NULL, 0);
 				break;
 				
 			case 's':
@@ -154,7 +162,7 @@ int main (int argc, char* argv[]) {
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
 				hdrUpdates.uFlags |= UPF_SGBF;
-				hdrUpdates.hdr.uSgbFlag = (unsigned char)strtoul(optarg, NULL, 0);
+				hdrUpdates.hdr.uSgbFlag = (uint8_t)strtoul(optarg, NULL, 0);
 				break;
 				
 			case 'V':
@@ -162,7 +170,48 @@ int main (int argc, char* argv[]) {
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
 				hdrUpdates.uFlags |= UPF_ROMVER;
-				hdrUpdates.hdr.uRomVer = (unsigned char)strtoul(optarg, NULL, 0);
+				hdrUpdates.hdr.uRomVer = (uint8_t)strtoul(optarg, NULL, 0);
+				break;
+				
+			case 't':
+				// Set ROM title.
+				rpParams.uFlags |= RPF_UPDATEROM;
+				
+				hdrUpdates.uFlags |= UPF_TITLE;
+				strncpy(hdrUpdates.hdr.title.szTitle, optarg, 15);
+				break;
+				
+			case 'm':
+				// Set manufacturer.
+				rpParams.uFlags |= RPF_UPDATEROM;
+				
+				hdrUpdates.uFlags |= UPF_MANU;
+				//strncpy(hdrUpdates.hdr.title.newTitle.strManufacturer, optarg, );
+				memcpy(hdrUpdates.hdr.title.newTitle.strManufacturer, optarg, 4);
+				break;
+				
+			case 'c':
+				// Set CGB flags.
+				rpParams.uFlags |= RPF_UPDATEROM;
+				
+				hdrUpdates.uFlags |= UPF_CGBF;
+				hdrUpdates.hdr.title.newTitle.uCgbFlag = (uint8_t)strtoul(optarg, NULL, 0);
+				break;
+				
+			case 'C':
+				// Set cart type.
+				rpParams.uFlags |= RPF_UPDATEROM;
+				
+				hdrUpdates.uFlags |= UPF_CARTTYPE;
+				hdrUpdates.hdr.uCartType = (uint8_t)strtoul(optarg, NULL, 0);
+				break;
+				
+			case 'R':
+				// Set RAM size.
+				rpParams.uFlags |= RPF_UPDATEROM;
+				
+				hdrUpdates.uFlags |= UPF_RAMSIZE;
+				hdrUpdates.hdr.uCartType = (uint8_t)strtoul(optarg, NULL, 0);
 				break;
 				
 			case '?':
@@ -227,64 +276,6 @@ int main (int argc, char* argv[]) {
 	
 	// Exit program.
 	return EXIT_SUCCESS;
-	
-}
-
-void printRomInfo (const PGBHEAD pgbHdr) {
-	
-	if (pgbHdr == NULL) {
-		fprintf(stderr, "Bad header info structure.\n");
-		return;
-	}
-	
-	printf("ROM Info:\n\n");
-	printf("\tLicensee Code:\t\t0x%X (%s type)\n", getLicenseeCode(pgbHdr), getLicenseeTypeStr(pgbHdr));
-	printf("\tROM Size:\t\t%ldkB (%ldB)\n", getRomSize(pgbHdr), getRomSize(pgbHdr) * 1024);
-	printf("\tRegion:\t\t\t%s (0x%X)\n", getRegionStr(pgbHdr), pgbHdr->uRegion);
-	printf("\tROM Version:\t\t0x%X\n", pgbHdr->uRomVer);
-	printf("\tHeader Checksum:\t0x%X\n", pgbHdr->uHdrChkSum);
-	printf("\tGlobal Checksum:\t0x%X\n", correctGlobalChkSum(pgbHdr));
-	
-	printf("\n");
-	
-}
-
-// Show help message.
-void printHelp () {
-	
-	printf("Help");
-	printf(g_szDivider, "General Operation");
-	printf("\t-h, --help         Show this help.\n");
-	printf("\t    --gpl          Show the GNU GPL3 notice.\n");
-	printf("\t-f, --file <file>  Set file to use to <file>.\n");
-	printf("\t-v, --verbose      Enable verbose mode.\n");
-	printf("\t-d, --dry-run      Don't make changes, only show what changes would be made.\n");
-	printf("\t    --norominfo    Don't show ROM information.\n");
-	printf(g_szDivider, "ROM Manipulation");
-	printf("\t-r, --region <region>  Set ROM region to <region>.\n");
-	printf("\t-s, --sgbflags <flags> Set SGB (Super GameBoy) flags to <flags>.\n");
-	printf("\t-V, --romver <ver>     Set ROM version to <ver>.\n");
-	printf("\n");
-	
-}
-
-// Regurgitate the GPL3 notice.
-void printGplNotice () {
-	
-	printf("This program is free software; you can redistribute it and/or modify\n\
-it under the terms of the GNU General Public License as published by\n\
-the Free Software Foundation; either version 2 of the License, or\n\
-(at your option) any later version.\n\
-\n");
-	printf("This program is distributed in the hope that it will be useful,\n\
-but WITHOUT ANY WARRANTY; without even the implied warranty of\n\
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n\
-GNU General Public License for more details.\n\
-\n");
-	printf("You should have received a copy of the GNU General Public License\n\
-along with this program; if not, write to the Free Software\n\
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,\n\
-MA 02110-1301, USA.\n\n");
 	
 }
 

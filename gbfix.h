@@ -26,19 +26,13 @@
 #define _GBFIX_H_
 
 // Include module headers.
-#include "inc/runparam.h"
 #include "inc/gbhead.h"
+#include "inc/messages.h"
+#include "inc/runparam.h"
 
 // Declare external variables and constants:
 extern const char g_szAppName[];
 extern const char g_szAppVer[];
-extern const char g_szDivider[];
-
-// Declare functions:
-void printRomInfo (const PGBHEAD pgbHdr);
-
-void printGplNotice ();
-void printHelp ();
 
 #endif /* _GBFIX_H_ */
 
