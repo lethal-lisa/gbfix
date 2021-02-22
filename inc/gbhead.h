@@ -52,6 +52,8 @@
 	$014E-$014F:	Global checksum (big endian).
 */
 
+#include <stdint.h>
+
 // ---------------------------------------------------------------------
 // Define flags.
 // ---------------------------------------------------------------------
@@ -96,6 +98,13 @@ enum {
 	UPF_MASK = 0x01FF
 };
 
+enum {
+	HDRREV_UNKNOWN,
+	HDRREV_DMG,
+	HDRREV_SGB,
+	HDRREV_CGB
+};
+
 // ---------------------------------------------------------------------
 // Define structures.
 // ---------------------------------------------------------------------
@@ -103,34 +112,36 @@ enum {
 // GameBoy ROM header structure.
 typedef struct tagGBHEAD
 {
-	unsigned char uEntryPoint[4];
-	unsigned char uNintendoLogo[48];
+	uint8_t uEntryPoint[4];
+	uint8_t uNintendoLogo[48];
 	union tagTitle {
 		char szTitle[16];
 		struct tagNewTitle {
 			char szTitle[11];
 			char strManufacturer[4];
-			unsigned char uCgbFlag;
+			uint8_t uCgbFlag;
 		} newTitle;
 	} title;
-	unsigned char uLicensee[2];
-	unsigned char uSgbFlag;
-	unsigned char uCartType;
-	unsigned char uRomSize;
-	unsigned char uRamSize;
-	unsigned char uRegion;
-	unsigned char uOldLicensee;
-	unsigned char uRomVer;
-	unsigned char uHdrChkSum;
-	unsigned short uGlobalChkSum;
+	uint8_t uLicensee[2];
+	uint8_t uSgbFlag;
+	uint8_t uCartType;
+	uint8_t uRomSize;
+	uint8_t uRamSize;
+	uint8_t uRegion;
+	uint8_t uOldLicensee;
+	uint8_t uRomVer;
+	uint8_t uHdrChkSum;
+	uint16_t uGlobalChkSum;
 } __attribute__((packed, aligned(4))) GBHEAD, *PGBHEAD;
 
 // Structure containing information about what to update in the ROM.
 typedef struct tagHDR_UPDATES
 {
-	unsigned long uFlags; // Flags about what is to be updated.
+	unsigned int uFlags; // Flags about what is to be updated.
+	unsigned short uHdrRev; // Header revision code.
 	GBHEAD hdr; // Fake header containing new information.
-} __attribute__((packed, aligned(4))) HDR_UPDATES, *PHDR_UPDATES;
+//} __attribute__((packed, aligned(4))) HDR_UPDATES, *PHDR_UPDATES;
+} HDR_UPDATES, *PHDR_UPDATES;
 
 // ---------------------------------------------------------------------
 // Define functions.

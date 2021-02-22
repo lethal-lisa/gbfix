@@ -27,22 +27,21 @@
 
 #include <stddef.h>
 
-// enum RPFLAGS
-// {
 enum {
-	RPF_EXIT = 0x00000001,
-	RPF_UNKNOWNPARAM = 0x00000002,
-	RPF_VERBOSE = 0x00000004,
-	RPF_NOROMINFO = 0x00000008,
-	RPF_ROMFILE = 0x00000100,
-	RPF_UPDATEROM = 0x00000200,
-	RPF_MASK = 0x00000307
+	RPF_EXIT = 0x0001,
+	RPF_UNKNOWNPARAM = 0x0002,
+	RPF_VERBOSE = 0x0004,
+	RPF_NOROMINFO = 0x0008,
+	RPF_ROMFILE = 0x0100,
+	RPF_UPDATEROM = 0x0200,
+	RPF_DRYRUN = 0x0400,
+	RPF_MASK = 0x070F
 };
 
 typedef struct tagRUN_PARAMS
 {
 	unsigned long int uFlags;
-	long int nExitCode;
+	unsigned long int nExitCode;
 	size_t cchFileName;
 	char* pszFileName;
 } __attribute__((packed, aligned(4))) RUN_PARAMS, *PRUN_PARAMS;
