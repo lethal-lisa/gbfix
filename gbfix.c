@@ -33,7 +33,7 @@
 #include "gbfix.h"
 
 const char g_szAppName[] = "GBFix";
-const char g_szAppVer[] = "0.2.1-proto";
+const char g_szAppVer[] = "0.2.2-proto";
 
 int main (int argc, char* argv[]) {
 	
@@ -239,11 +239,6 @@ int main (int argc, char* argv[]) {
 			doExit(&rpParams);
 		}
 		
-		// Print verbose mode information.
-		if (rpParams.uFlags & RPF_VERBOSE) {
-			printf("\n");
-		}
-		
 		// Allocate space for header.
 		PGBHEAD pgbHdr;
 		if ((pgbHdr = malloc(sizeof(GBHEAD))) == NULL) {
@@ -262,6 +257,8 @@ int main (int argc, char* argv[]) {
 			doExit(&rpParams);
 		}
 		
+		validateChksums(pgbHdr, &rpParams);
+		
 		// Print ROM info.
 		if (!(rpParams.uFlags & RPF_NOROMINFO)) {
 			printf("Using file: \"%s\"\n", rpParams.pszFileName);
@@ -276,6 +273,21 @@ int main (int argc, char* argv[]) {
 	
 	// Exit program.
 	return EXIT_SUCCESS;
+	
+}
+
+void validateChksums (PGBHEAD pHdr, PRUN_PARAMS prpParams) {
+	
+	uint8_t uNewHdrChksum = mkGbHdrChksum(pHdr);
+	// uint16_t uNewGlobalChksum;
+	
+	if (pHdr->uHdrChksum != uNewHdrChksum) {
+		if (prpParams->uFlags & RPF_UPDATEROM) {
+			pHdr->uHdrChksum = uNewHdrChksum;
+		} else {
+			printf("Warning: Header checksum is invalid. ROM will be unbootable! Correct value is 0x%X.\n", uNewHdrChksum);
+		}
+	}
 	
 }
 
