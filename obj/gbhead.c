@@ -93,7 +93,7 @@ const char* getRegionStr (const PGBHEAD pHdr) {
 	
 }
 
-unsigned short int correctGlobalChkSum (const PGBHEAD pHdr) {
+uint16_t correctGlobalChksum (const PGBHEAD pHdr) {
 	
 	if (pHdr == NULL) {
 		errno = EFAULT;
@@ -101,9 +101,9 @@ unsigned short int correctGlobalChkSum (const PGBHEAD pHdr) {
 	}
 	
 	#if __BYTE_ORDER == __LITTLE_ENDIAN
-		return be16toh(pHdr->uGlobalChkSum);
+		return be16toh(pHdr->uGlobalChksum);
 	#else
-		return pHdr->uGlobalChkSum;
+		return pHdr->uGlobalChksum;
 	#endif
 	
 }
@@ -121,21 +121,21 @@ long int getRomSize (const PGBHEAD pHdr) {
 }
 
 // Generates a header checksum.
-unsigned char mkGbHdrChksum (const PGBHEAD pHdr) {
+uint8_t mkGbHdrChksum (const PGBHEAD pHdr) {
 	
 	if (pHdr == NULL) {
 		errno = EFAULT;
 		return 0;
 	}
 	
-	unsigned long int uChkSum = 0;
+	unsigned long int uChksum = 0;
 	
 	int iByte;
 	//for (iByte = 0x34; iByte < 0x4C; iByte++)
 	for (iByte = 0; iByte < sizeof(GBHEAD); iByte++)
-		uChkSum = uChkSum - ((unsigned char*) pHdr)[iByte] - 1;
+		uChksum = uChksum - ((unsigned char*) pHdr)[iByte] - 1;
 	
-	return (unsigned char)(uChkSum & 0xFF);
+	return (uint8_t)(uChksum & 0xFF);
 	
 }
 

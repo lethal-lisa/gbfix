@@ -130,8 +130,8 @@ typedef struct tagGBHEAD
 	uint8_t uRegion;
 	uint8_t uOldLicensee;
 	uint8_t uRomVer;
-	uint8_t uHdrChkSum;
-	uint16_t uGlobalChkSum;
+	uint8_t uHdrChksum;
+	uint16_t uGlobalChksum;
 } __attribute__((packed, aligned(4))) GBHEAD, *PGBHEAD;
 
 // Structure containing information about what to update in the ROM.
@@ -140,11 +140,10 @@ typedef struct tagHDR_UPDATES
 	unsigned int uFlags; // Flags about what is to be updated.
 	unsigned short uHdrRev; // Header revision code.
 	GBHEAD hdr; // Fake header containing new information.
-//} __attribute__((packed, aligned(4))) HDR_UPDATES, *PHDR_UPDATES;
 } HDR_UPDATES, *PHDR_UPDATES;
 
 // ---------------------------------------------------------------------
-// Define functions.
+// Declare functions.
 // ---------------------------------------------------------------------
 
 // Licensee code functions.
@@ -154,9 +153,9 @@ unsigned char getLicenseeCode (const PGBHEAD pHdr);
 const char* getLicenseeTypeStr (const PGBHEAD pHdr);
 const char* getRegionStr (const PGBHEAD pHdr);
 
-unsigned short int correctGlobalChkSum (const PGBHEAD pHdr);
+uint16_t correctGlobalChksum (const PGBHEAD pHdr);
 long int getRomSize (const PGBHEAD pHdr);
-unsigned char mkGbHdrChksum (const PGBHEAD pHdr);
+uint8_t mkGbHdrChksum (const PGBHEAD pHdr);
 
 // File I/O functions.
 long int loadHeaderFromFile (const char* pszFileName, PGBHEAD pHdr);

@@ -51,8 +51,8 @@ void printRomInfo (const PGBHEAD pgbHdr) {
 	printf("\tROM Size:\t\t%ldkB (%ldB)\n", getRomSize(pgbHdr), getRomSize(pgbHdr) * 1024);
 	printf("\tRegion:\t\t\t%s (0x%X)\n", getRegionStr(pgbHdr), pgbHdr->uRegion);
 	printf("\tROM Version:\t\t0x%X\n", pgbHdr->uRomVer);
-	printf("\tHeader Checksum:\t0x%X\n", pgbHdr->uHdrChkSum);
-	printf("\tGlobal Checksum:\t0x%X\n", correctGlobalChkSum(pgbHdr));
+	printf("\tHeader Checksum:\t0x%X\n", pgbHdr->uHdrChksum);
+	printf("\tGlobal Checksum:\t0x%X\n", correctGlobalChksum(pgbHdr));
 	
 	printf("\n");
 	
