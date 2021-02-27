@@ -26,6 +26,7 @@
 #define _GBHEAD_H_
 
 /*
+	
 	GameBoy Mask ROM Layout:
 	
 	$0000-$00FF:	Interrupt handler information.
@@ -50,6 +51,9 @@
 	$014C:			Software version.
 	$014D:			Header checksum.
 	$014E-$014F:	Global checksum (big endian).
+	
+	Special Thanks to Pan Docs; available at: https://gbdev.io/pandocs/
+	
 */
 
 #include <stdint.h>
@@ -71,15 +75,55 @@ enum {
 	CGBF_MASK = 0xCC
 };
 
+enum {
+	LICETYPE_OLD,
+	LICETYPE_NEW,
+	LICETYPE_UNKNOWN
+};
+
 // SGB feature flags:
 #define SGBF_SGBSUPPORT 0x03
 
 // Region IDs:
-#define REGION_JAPAN 0x00
-#define REGION_INTERNATIONAL 0x01
+enum {
+	REGION_JAPAN,
+	REGION_INTERNATIONAL
+};
 
 // New licensee code.
 #define LICENSEE_NEW 0x33
+
+// Cartridge type values.
+enum {
+	CT_ROM_ONLY = 0x00,
+	CT_MBC1 = 0x01,
+	CT_MBC1_RAM,
+	CT_MBC1_BATTERY_RAM,
+	CT_MBC2 = 0x05,
+	CT_MBC2_BATTERY,
+	CT_ROM_RAM = 0x08,
+	CT_ROM_BATTERY_RAM,
+	CT_MMM01 = 0x0B,
+	CT_MMM01_RAM,
+	CT_MMM01_BATTERY_RAM,
+	CT_MBC3_BATTERY_TIMER = 0x0F,
+	CT_MBC3_BATTERY_RAM_TIMER,
+	CT_MBC3,
+	CT_MBC3_RAM,
+	CT_MBC3_BATTERY_RAM,
+	CT_MBC5 = 0x19,
+	CT_MBC5_RAM,
+	CT_MBC5_BATTERY_RAM,
+	CT_MBC5_RUMBLE,
+	CT_MBC5_RAM_RUMBLE,
+	CT_MBC5_BATTERY_RAM_RUMBLE,
+	CT_MBC6 = 0x20,
+	CT_MBC7_BATTERY_RAM_RUMBLE_SENSOR,
+	CT_CAMERA = 0xFC,
+	CT_TAMA5 = 0xFD,
+	CT_HuC3 = 0xFE,
+	CT_HuC1_BATTERY_RAM
+};
 
 // ---------------------------------------------------------------------
 // Flags for structure tagHDR_UPDATES.
@@ -131,7 +175,8 @@ typedef struct tagGBHEAD
 	uint8_t uOldLicensee;
 	uint8_t uRomVer;
 	uint8_t uHdrChksum;
-	uint16_t uGlobalChksum;
+	//uint16_t uGlobalChksum;
+	uint8_t uGlobalChksum[2];
 } __attribute__((packed, aligned(4))) GBHEAD, *PGBHEAD;
 
 // Structure containing information about what to update in the ROM.
@@ -148,18 +193,21 @@ typedef struct tagHDR_UPDATES
 
 // Licensee code functions.
 int isNewLicensee (const PGBHEAD pHdr);
-unsigned char getLicenseeCode (const PGBHEAD pHdr);
+uint8_t getLicenseeCode (const PGBHEAD pHdr);
 
 const char* getLicenseeTypeStr (const PGBHEAD pHdr);
 const char* getRegionStr (const PGBHEAD pHdr);
 
+long int getRomSizeInkB (const PGBHEAD pHdr);
+
 uint16_t correctGlobalChksum (const PGBHEAD pHdr);
-long int getRomSize (const PGBHEAD pHdr);
+// TODO: Implement this:
+// uint16_t mkGbGlobalChksum (const PGBHEAD pHdr);
 uint8_t mkGbHdrChksum (const PGBHEAD pHdr);
 
 // File I/O functions.
-long int loadHeaderFromFile (const char* pszFileName, PGBHEAD pHdr);
-long int saveHeaderToFile (const char* pszFileName, const PGBHEAD pHdr);
+int loadHeaderFromFile (const char* pszFileName, PGBHEAD pHdr);
+int saveHeaderToFile (const char* pszFileName, const PGBHEAD pHdr);
 
 #endif /* _GBHEAD_H_ */
 
