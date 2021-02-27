@@ -33,7 +33,10 @@
 #include "gbfix.h"
 
 const char g_szAppName[] = "GBFix";
-const char g_szAppVer[] = "0.2.2-proto";
+const char g_szAppVer[] = "0.3-proto";
+
+int doFileOperations (PRUN_PARAMS prp);
+static inline void validateChksums (PRUN_PARAMS prp);
 
 int main (int argc, char* argv[]) {
 	
@@ -116,8 +119,10 @@ int main (int argc, char* argv[]) {
 				
 				if (rpParams.uFlags & RPF_ROMFILE || rpParams.pszFileName != NULL) {
 					fprintf(stderr, "Error: ROM file already selected. Cannot operate on two files.\n");
-					setExitCode(&rpParams, EXIT_FAILURE);
+					//setExitCode(&rpParams, EXIT_FAILURE);
 					break;
+				} else {
+					rpParams.uFlags |= RPF_ROMFILE;
 				}
 				
 				// Allocate string buffer.
@@ -134,7 +139,7 @@ int main (int argc, char* argv[]) {
 				}
 				
 				// Update flags.
-				rpParams.uFlags |= RPF_ROMFILE;
+				//rpParams.uFlags |= RPF_ROMFILE;
 				
 				break;
 				
@@ -230,64 +235,113 @@ int main (int argc, char* argv[]) {
 		setExitCode(&rpParams, EXIT_FAILURE);
 	}
 	
-	if (rpParams.uFlags & RPF_ROMFILE) {
-		
-		// Check for file name buffer.
-		if (rpParams.pszFileName == NULL) {
-			fprintf(stderr, "Error: File name buffer not allocated.\n");
-			setExitCode(&rpParams, EXIT_FAILURE);
-			doExit(&rpParams);
-		}
-		
-		// Allocate space for header.
-		PGBHEAD pgbHdr;
-		if ((pgbHdr = malloc(sizeof(GBHEAD))) == NULL) {
-			perror("Could not allocate buffer for header.\n");
-			errno = 0;
-			setExitCode(&rpParams, EXIT_FAILURE);
-			doExit(&rpParams);
-		}
-		
-		// Load header.
-		if (loadHeaderFromFile(rpParams.pszFileName, pgbHdr)) {
-			perror("Failed to load ROM header.\n");
-			errno = 0;
-			setExitCode(&rpParams, EXIT_FAILURE);
-			free(pgbHdr);
-			doExit(&rpParams);
-		}
-		
-		validateChksums(pgbHdr, &rpParams);
-		
-		// Print ROM info.
-		if (!(rpParams.uFlags & RPF_NOROMINFO)) {
-			printf("Using file: \"%s\"\n", rpParams.pszFileName);
-			printRomInfo(pgbHdr);
-		}
-		
-		free(pgbHdr);
-		
-	}
-	
-	doExit(&rpParams);
+	doFileOperations(&rpParams);
 	
 	// Exit program.
+	doExit(&rpParams);
 	return EXIT_SUCCESS;
 	
 }
 
-void validateChksums (PGBHEAD pHdr, PRUN_PARAMS prpParams) {
+int doFileOperations (PRUN_PARAMS prp) {
 	
-	uint8_t uNewHdrChksum = mkGbHdrChksum(pHdr);
-	// uint16_t uNewGlobalChksum;
+	if (prp == NULL) {
+		errno = EFAULT;
+		perror("Bad/NULL pointer passed as runtime parameters.\n");
+		errno = 0;
+		return 1;
+	}
 	
-	if (pHdr->uHdrChksum != uNewHdrChksum) {
-		if (prpParams->uFlags & RPF_UPDATEROM) {
-			pHdr->uHdrChksum = uNewHdrChksum;
+	if (!(prp->uFlags & RPF_ROMFILE)) {
+		//fprintf(stderr, "Error: No file specified.\n");
+		setExitCode(prp, EXIT_SUCCESS);
+		return 1;
+	}
+	
+	// Check file name buffer.
+	if (prp->pszFileName == NULL) {
+		fprintf(stderr, "Error: File name buffer not allocated.\n");
+		setExitCode(prp, EXIT_FAILURE);
+		return 1;
+	}
+	
+	// Allocate header buffer.
+	if ((prp->pgbHdr = malloc(sizeof(GBHEAD))) == NULL) {
+		perror("Could not allocate buffer for header.\n");
+		errno = 0;
+		setExitCode(prp, EXIT_FAILURE);
+		return 1;
+	}
+	
+	// Read header from file.
+	if (loadHeaderFromFile(prp->pszFileName, prp->pgbHdr)) {
+		perror("Failed to load ROM header.\n");
+		errno = 0;
+		setExitCode(prp, EXIT_FAILURE);
+		return 1;
+	}
+	
+	// Print ROM info.
+	if (!(prp->uFlags & RPF_NOROMINFO)) {
+		printf("Using file: \"%s\"\n", prp->pszFileName);
+		printRomInfo(prp->pgbHdr);
+	}
+	
+	validateChksums(prp);
+	
+	if (!(prp->uFlags & RPF_UPDATEROM)) return 0;
+	
+	// TODO: Add routine to copy updates from the update structure into header to writeback.
+	
+	// Print updated ROM header information.
+	if (prp->uFlags & RPF_VERBOSE || prp->uFlags & RPF_DRYRUN) {
+		printf("Updated ROM header:\n");
+		printRomInfo(prp->pgbHdr);
+	}
+	
+	// Prevent save if dry run is enabled.
+	if (prp->uFlags & RPF_DRYRUN) {
+		setExitCode(prp, EXIT_SUCCESS);
+		return 0;
+	}
+	
+	// Write header back to file.
+	if (saveHeaderToFile(prp->pszFileName, prp->pgbHdr)) {
+		perror("Failed to save ROM header to file.\n");
+		errno = 0;
+		setExitCode(prp, EXIT_FAILURE);
+		return 1;
+	}
+	
+	// Set successful exit code & exit.
+	setExitCode(prp, EXIT_SUCCESS);
+	return 0;
+	
+}
+
+static inline void validateChksums (PRUN_PARAMS prp) {
+	
+	uint8_t uNewHdrChksum = mkGbHdrChksum(prp->pgbHdr);
+	// uint16_t uNewGlobalChksum = mkGbHdrGlobalChksum(prp->pgbHdr);
+	
+	if (prp->pgbHdr->uHdrChksum != uNewHdrChksum) {
+		if (prp->uFlags & RPF_UPDATEROM) {
+			prp->pgbHdr->uHdrChksum = uNewHdrChksum;
 		} else {
 			printf("Warning: Header checksum is invalid. ROM will be unbootable! Correct value is 0x%X.\n", uNewHdrChksum);
 		}
 	}
+	
+	/*
+	if (correctGlobalChksum(prp->pgbHdr) != uNewGlobalChksum) {
+		if (prp->uFlags & RPF_UPDATEROM) {
+			prp->pgbHdr->uGlobalChksum = uNewGlobalChksum;
+		} else {
+			printf("Warning: Global checksum is invalid. Real hardware \
+will not care, but emulators might give warnings!\n");
+		}
+	}
+	*/
 	
 }
 

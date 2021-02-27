@@ -34,9 +34,6 @@
 extern const char g_szAppName[];
 extern const char g_szAppVer[];
 
-// Declare functions:
-void validateChksums (PGBHEAD pHdr, PRUN_PARAMS prpParams);
-
 #endif /* _GBFIX_H_ */
 
 // EOF
