@@ -33,7 +33,21 @@
 
 const char s_pszUnknown[] = "Unknown";
 
-// Returns nonzero if licensee is of new type.
+/*
+ * 
+ * name: isNewLicensee
+ * 
+ * 		Returns whether or not the licensee code is of the new type.
+ * 
+ * @param:
+ * 		const PGBHEAD pHdr:
+ * 			Constant pointer to the GameBoy header structure to use.
+ * 
+ * @return: int
+ * 		Returns LICETYPE_NEW or LICETYPE_OLD depending on the type of
+ * 	the licensee code. Also returns 0 and sets errno on an error.
+ * 
+ */
 int isNewLicensee (const PGBHEAD pHdr) {
 	
 	if (pHdr == NULL) {
@@ -41,32 +55,64 @@ int isNewLicensee (const PGBHEAD pHdr) {
 		return 0;
 	}
 	
-	if (pHdr->uOldLicensee == LICENSEE_NEW) return -1;
-	return 0;
+	if (pHdr->uOldLicensee == LICENSEE_NEW) return LICETYPE_NEW;
+	return LICETYPE_OLD;
 	
 }
 
-// Obtains the licensee code.
-unsigned char getLicenseeCode (const PGBHEAD pHdr) {
+/*
+ * 
+ * name: getLicenseeCode
+ * 
+ * 		Obtains the licensee code regardless of type.
+ * 
+ * @param:
+ * 		const PGBHEAD pHdr:
+ * 			Constant pointer to the GameBoy header structure to use.
+ * 
+ * @return: uint8_t
+ * 		Returns the licensee code, or sets errno and returns zero on
+ * 	error. Sets errno to EFAULT if pHdr was NULL, or EINVAL if the
+ * 	licensee code is of type new, and the two do not match.
+ * 
+ */
+uint8_t getLicenseeCode (const PGBHEAD pHdr) {
 	
 	if (pHdr == NULL) {
 		errno = EFAULT;
 		return 0;
 	}
 	
-	if (isNewLicensee(pHdr)) {
-		if (pHdr->uLicensee[0] != pHdr->uLicensee[1]) {
-			fprintf(stderr, "Error: New licensee codes do not match.\n");
-			return pHdr->uLicensee[0];
-		}
-		return pHdr->uLicensee[0];
+	if (!isNewLicensee(pHdr)) {
+		if (errno > 0) return 0;
+		return pHdr->uOldLicensee;
 	}
 	
-	return pHdr->uOldLicensee;
+	if (pHdr->uLicensee[0] != pHdr->uLicensee[1]) {
+		// fprintf(stderr, "Error: New licensee codes do not match.\n");
+		// return pHdr->uLicensee[0];
+		errno = EINVAL;
+		return 0;
+	}
+	return pHdr->uLicensee[0];
 	
 }
 
-// Get the licensee type as a string.
+/*
+ * 
+ * name: getLicenseeTypeStr
+ * 
+ * 		Returns the licensee type as a constant char string.
+ * 
+ * @param:
+ * 		const PGBHEAD pHdr:
+ * 			Constant pointer to the GameBoy header structure to use.
+ * 
+ * @return: const char*
+ * 		Returns the licensee type as either "New" or "Old", or
+ * 	"Unknown" if an error occured. Sets errno on error.
+ * 
+ */
 const char* getLicenseeTypeStr (const PGBHEAD pHdr) {
 	
 	if (pHdr == NULL) {
@@ -74,12 +120,30 @@ const char* getLicenseeTypeStr (const PGBHEAD pHdr) {
 		return s_pszUnknown;
 	}
 	
-	if (isNewLicensee(pHdr)) return "New";
-	return "Old";
+	if (!isNewLicensee(pHdr)) {
+		if (errno > 0) return s_pszUnknown;
+		return "Old";
+	}
+	return "New";
 	
 }
 
-// Get the ROM region as a string.
+/*
+ * 
+ * name: getRegionStr
+ * 
+ * 		Returns the ROM's region as a constant char string.
+ * 
+ * @param:
+ * 		const PGBHEAD pHdr:
+ * 			Constant pointer to the GameBoy header structure to use.
+ * 
+ * @return: const char*
+ * 		Returns the region of the ROM, or "Unknown" if the region is
+ * 	unknown or an error occured. Sets errno if an error occured. Sets
+ * 	EFAULT if pHdr was NULL.
+ * 
+ */
 const char* getRegionStr (const PGBHEAD pHdr) {
 	
 	if (pHdr == NULL) {
@@ -93,26 +157,32 @@ const char* getRegionStr (const PGBHEAD pHdr) {
 	
 }
 
-uint16_t correctGlobalChksum (const PGBHEAD pHdr) {
+/*
+ * 
+ * name: getRomSize
+ * 
+ * 		Gets the size field of the ROM's header, and converts it into
+ * 	kilobytes.
+ * 
+ * @param:
+ * 		const PGBHEAD pHdr:
+ * 			Constant pointer to the GameBoy header structure to use.
+ * 
+ * @return: long int
+ * 		Returns the ROM size, or 0 on error. Sets errno on an error.
+ * 	Sets EFAULT if pHdr was NULL, or EINVAL if the ROM size field's value
+ * is zero.
+ * 
+ */
+long int getRomSizeInkB (const PGBHEAD pHdr) {
 	
 	if (pHdr == NULL) {
 		errno = EFAULT;
 		return 0;
 	}
 	
-	#if __BYTE_ORDER == __LITTLE_ENDIAN
-		return be16toh(pHdr->uGlobalChksum);
-	#else
-		return pHdr->uGlobalChksum;
-	#endif
-	
-}
-
-// Returns the ROM size in kilobytes.
-long int getRomSize (const PGBHEAD pHdr) {
-	
-	if (pHdr == NULL) {
-		errno = EFAULT;
+	if (pHdr->uRomSize == 0) {
+		errno = EINVAL;
 		return 0;
 	}
 	
@@ -120,7 +190,70 @@ long int getRomSize (const PGBHEAD pHdr) {
 	
 }
 
+/*
+ * 
+ * name: correctGlobalChksum
+ * 
+ * 		Corrects the global checksum to the host machine's endianness.
+ * 	This does nothing on big-endian machines, but performs a byteswap
+ * 	on little-endian ones.
+ * 
+ * @param:
+ * 		const PGBHEAD pHdr:
+ * 			Constant pointer to the GameBoy header structure containing
+ * 		the checksum to correct.
+ * 
+ * @return: uint16_t
+ * 		Returns either the corrected checksum, or 0 on error. Sets 
+ * 	errno on error. Sets either EFAULT if pHdr was NULL, or EINVAL if 
+ * 	the checksum's value is zero.
+ * 
+ */
+uint16_t correctGlobalChksum (const PGBHEAD pHdr) {
+	
+	if (pHdr == NULL) {
+		errno = EFAULT;
+		return 0;
+	}
+	
+	if (pHdr->uGlobalChksum == 0) {
+		errno = EINVAL;
+		return 0;
+	}
+	
+	uint16_t uRetVal;
+	
+	#if __BYTE_ORDER == __LITTLE_ENDIAN
+		// If little endian.
+		//return be16toh(pHdr->uGlobalChksum);
+		uRetVal = ((pHdr->uGlobalChksum[1] << 8) | pHdr->uGlobalChksum[0]);
+		
+	#else
+		// If big endian.
+		//return pHdr->uGlobalChksum;
+		uRetVal = ((pHdr->uGlobalChksum[0] << 8) | pHdr->uGlobalChksum[1]);
+	#endif
+	
+	return uRetVal;
+	
+}
+
 // Generates a header checksum.
+/*
+ * 
+ * name: mkGbHdrChksum
+ * 
+ * 		Generates a new header checksum.
+ * 
+ * @param:
+ * 		const PGBHEAD pHdr:
+ * 			Constant pointer to the GameBoy header structure to use.
+ * 
+ * @return: uint8_t
+ * 		Returns the newly generated checksum, or sets errno and
+ * 	returns zero on error.
+ * 
+ */
 uint8_t mkGbHdrChksum (const PGBHEAD pHdr) {
 	
 	if (pHdr == NULL) {
@@ -128,9 +261,9 @@ uint8_t mkGbHdrChksum (const PGBHEAD pHdr) {
 		return 0;
 	}
 	
-	unsigned long int uChksum = 0;
+	unsigned long int uChksum = 0; // Buffer for the checksum.
+	int iByte; // Index of current byte.
 	
-	int iByte;
 	//for (iByte = 0x34; iByte < 0x4C; iByte++)
 	for (iByte = 0; iByte < sizeof(GBHEAD); iByte++)
 		uChksum = uChksum - ((unsigned char*) pHdr)[iByte] - 1;
@@ -139,8 +272,25 @@ uint8_t mkGbHdrChksum (const PGBHEAD pHdr) {
 	
 }
 
-// Loads the header in from a file.
-long int loadHeaderFromFile (const char* pszFileName, PGBHEAD pHdr) {
+/*
+ * 
+ * name: loadHeaderFromFile
+ * 
+ * 		Loads the GameBoy header structure from a given file.
+ * 
+ * @param:
+ * 		const char* pszFileName:
+ * 			Name of the file to read from.
+ * 
+ * 		PGBHEAD pHdr:
+ * 			Pointer to the header structure to read data into.
+ * 
+ * @return: int
+ * 		Returns zero on success, or sets errno and returns nonzero on
+ * 	error.
+ * 
+ */
+int loadHeaderFromFile (const char* pszFileName, PGBHEAD pHdr) {
 	
 	if (pHdr == NULL) {
 		errno = EFAULT;
@@ -165,7 +315,25 @@ long int loadHeaderFromFile (const char* pszFileName, PGBHEAD pHdr) {
 }
 
 // Saves the header to a file.
-long int saveHeaderToFile (const char* pszFileName, const PGBHEAD pHdr) {
+/*
+ * 
+ * name: saveHeaderToFile
+ * 
+ * 		Saves a GameBoy header structure to a given file.
+ * 
+ * @param:
+ * 		const char* pszFileName:
+ * 			Name of the file to write to.
+ * 
+ * 		PGBHEAD pHdr:
+ * 			Pointer to the header structure to read data into.
+ * 
+ * @return: int
+ * 		Returns zero on success, or sets errno and returns nonzero on
+ * 	error.
+ * 
+ */
+int saveHeaderToFile (const char* pszFileName, const PGBHEAD pHdr) {
 	
 	if (pHdr == NULL) {
 		errno = EFAULT;
