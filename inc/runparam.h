@@ -25,6 +25,7 @@
 #ifndef _RUNPARAM_H_
 #define _RUNPARAM_H_
 
+#include "gbhead.h"
 #include <stddef.h>
 
 enum {
@@ -44,6 +45,7 @@ typedef struct tagRUN_PARAMS
 	unsigned long int nExitCode;
 	size_t cchFileName;
 	char* pszFileName;
+	PGBHEAD pgbHdr;
 } __attribute__((packed, aligned(4))) RUN_PARAMS, *PRUN_PARAMS;
 
 void setExitCode (PRUN_PARAMS pParams, const long int nExitCode);

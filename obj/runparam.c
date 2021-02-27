@@ -47,6 +47,9 @@ void doExit (PRUN_PARAMS pParams) {
 	// Deallocate runtime params.
 	if (pParams->pszFileName != NULL) free(pParams->pszFileName);
 	
+	// Deallocate GB header struct.
+	if (pParams->pgbHdr != NULL) free(pParams->pgbHdr);
+	
 	// Check for specific exit flag.
 	if ((pParams->uFlags & RPF_MASK) & RPF_EXIT) exit(pParams->nExitCode);
 	
