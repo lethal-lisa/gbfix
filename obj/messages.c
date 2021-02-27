@@ -48,7 +48,7 @@ void printRomInfo (const PGBHEAD pgbHdr) {
 	printf("\tCGB Flags:\t\t0x%X\n\n", pgbHdr->title.newTitle.uCgbFlag);
 	
 	printf("\tLicensee Code:\t\t0x%X (%s type)\n", getLicenseeCode(pgbHdr), getLicenseeTypeStr(pgbHdr));
-	printf("\tROM Size:\t\t%ldkB (%ldB)\n", getRomSize(pgbHdr), getRomSize(pgbHdr) * 1024);
+	printf("\tROM Size:\t\t%ldkB (%ldB)\n", getRomSizeInkB(pgbHdr), getRomSizeInkB(pgbHdr) * 1024);
 	printf("\tRegion:\t\t\t%s (0x%X)\n", getRegionStr(pgbHdr), pgbHdr->uRegion);
 	printf("\tROM Version:\t\t0x%X\n", pgbHdr->uRomVer);
 	printf("\tHeader Checksum:\t0x%X\n", pgbHdr->uHdrChksum);
