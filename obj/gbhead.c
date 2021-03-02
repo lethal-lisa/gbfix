@@ -260,9 +260,7 @@ uint8_t mkGbHdrChksum (const PGBHEAD pHdr) {
 	unsigned long int uChksum = 0; // Buffer for the checksum.
 	int iByte; // Index of current byte.
 	
-	// FIXME: Outputs incorrect checksum.
-	//for (iByte = 0x34; iByte < 0x4C; iByte++)
-	for (iByte = 0; iByte < sizeof(GBHEAD); iByte++)
+	for (iByte = 0x34; iByte <= 0x4C; iByte++)
 		uChksum = uChksum - ((unsigned char*)pHdr)[iByte] - 1;
 	
 	return (uint8_t)(uChksum & 0xFF);

@@ -33,7 +33,7 @@
 #include "gbfix.h"
 
 const char s_pszAppName[] = "GBFix";
-const char s_pszAppVer[] = "0.3-proto";
+const char s_pszAppVer[] = "0.3.1-proto";
 
 int doFileOperations (PRUN_PARAMS prp);
 static inline void validateChksums (PRUN_PARAMS prp);
