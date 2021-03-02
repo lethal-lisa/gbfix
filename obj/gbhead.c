@@ -89,8 +89,6 @@ uint8_t getLicenseeCode (const PGBHEAD pHdr) {
 	}
 	
 	if (pHdr->uLicensee[0] != pHdr->uLicensee[1]) {
-		// fprintf(stderr, "Error: New licensee codes do not match.\n");
-		// return pHdr->uLicensee[0];
 		errno = EINVAL;
 		return 0;
 	}
@@ -159,7 +157,7 @@ const char* getRegionStr (const PGBHEAD pHdr) {
 
 /*
  * 
- * name: getRomSize
+ * name: getRomSizeInkB
  * 
  * 		Gets the size field of the ROM's header, and converts it into
  * 	kilobytes.
@@ -225,12 +223,11 @@ uint16_t correctGlobalChksum (const PGBHEAD pHdr) {
 	
 	#if __BYTE_ORDER == __LITTLE_ENDIAN
 		// If little endian.
-		//return be16toh(pHdr->uGlobalChksum);
+		//return be16toh((uint16_t)pHdr->uGlobalChksum);
 		uRetVal = ((pHdr->uGlobalChksum[1] << 8) | pHdr->uGlobalChksum[0]);
-		
 	#else
 		// If big endian.
-		//return pHdr->uGlobalChksum;
+		//return (uint16_t)pHdr->uGlobalChksum;
 		uRetVal = ((pHdr->uGlobalChksum[0] << 8) | pHdr->uGlobalChksum[1]);
 	#endif
 	
@@ -238,7 +235,6 @@ uint16_t correctGlobalChksum (const PGBHEAD pHdr) {
 	
 }
 
-// Generates a header checksum.
 /*
  * 
  * name: mkGbHdrChksum
@@ -264,9 +260,10 @@ uint8_t mkGbHdrChksum (const PGBHEAD pHdr) {
 	unsigned long int uChksum = 0; // Buffer for the checksum.
 	int iByte; // Index of current byte.
 	
+	// FIXME: Outputs incorrect checksum.
 	//for (iByte = 0x34; iByte < 0x4C; iByte++)
 	for (iByte = 0; iByte < sizeof(GBHEAD); iByte++)
-		uChksum = uChksum - ((unsigned char*) pHdr)[iByte] - 1;
+		uChksum = uChksum - ((unsigned char*)pHdr)[iByte] - 1;
 	
 	return (uint8_t)(uChksum & 0xFF);
 	
@@ -314,7 +311,6 @@ int loadHeaderFromFile (const char* pszFileName, PGBHEAD pHdr) {
 	
 }
 
-// Saves the header to a file.
 /*
  * 
  * name: saveHeaderToFile

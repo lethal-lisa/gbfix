@@ -32,19 +32,20 @@
 // Include module header(s):
 #include "gbfix.h"
 
-const char g_szAppName[] = "GBFix";
-const char g_szAppVer[] = "0.3-proto";
+const char s_pszAppName[] = "GBFix";
+const char s_pszAppVer[] = "0.3-proto";
 
 int doFileOperations (PRUN_PARAMS prp);
 static inline void validateChksums (PRUN_PARAMS prp);
 
 int main (int argc, char* argv[]) {
 	
-	printf("%s v%s\n\n", g_szAppName, g_szAppVer);
+	printf("%s v%s\n", s_pszAppName, s_pszAppVer);
 	
-	RUN_PARAMS rpParams;
-	HDR_UPDATES hdrUpdates;
+	RUN_PARAMS rpParams; // Runtime parameters.
+	HDR_UPDATES hdrUpdates; // Header updates.
 	
+	// Initialize runtime parameters.
 	memset(&rpParams, 0, sizeof(RUN_PARAMS));
 	memset(&hdrUpdates, 0, sizeof(HDR_UPDATES));
 	
@@ -137,9 +138,6 @@ int main (int argc, char* argv[]) {
 					setExitCode(&rpParams, EXIT_FAILURE);
 					break;
 				}
-				
-				// Update flags.
-				//rpParams.uFlags |= RPF_ROMFILE;
 				
 				break;
 				
@@ -235,7 +233,8 @@ int main (int argc, char* argv[]) {
 		setExitCode(&rpParams, EXIT_FAILURE);
 	}
 	
-	doFileOperations(&rpParams);
+	if (doFileOperations(&rpParams))
+		fprintf(stderr, "Error: Fatal error while performing file operations.\n");
 	
 	// Exit program.
 	doExit(&rpParams);
@@ -252,10 +251,10 @@ int doFileOperations (PRUN_PARAMS prp) {
 		return 1;
 	}
 	
+	// Check for ROM file flag set.
 	if (!(prp->uFlags & RPF_ROMFILE)) {
-		//fprintf(stderr, "Error: No file specified.\n");
 		setExitCode(prp, EXIT_SUCCESS);
-		return 1;
+		return 0;
 	}
 	
 	// Check file name buffer.
@@ -289,9 +288,13 @@ int doFileOperations (PRUN_PARAMS prp) {
 	
 	validateChksums(prp);
 	
-	if (!(prp->uFlags & RPF_UPDATEROM)) return 0;
+	// Skip file updates if update flag not set.
+	if (!(prp->uFlags & RPF_UPDATEROM)) {
+		setExitCode(prp, EXIT_SUCCESS);
+		return 0;
+	}
 	
-	// TODO: Add routine to copy updates from the update structure into header to writeback.
+	// TODO: Add routine to copy updates from the update structure into header to write back.
 	
 	// Print updated ROM header information.
 	if (prp->uFlags & RPF_VERBOSE || prp->uFlags & RPF_DRYRUN) {

@@ -195,13 +195,16 @@ typedef struct tagHDR_UPDATES
 int isNewLicensee (const PGBHEAD pHdr);
 uint8_t getLicenseeCode (const PGBHEAD pHdr);
 
+// String retrieval functions.
 const char* getLicenseeTypeStr (const PGBHEAD pHdr);
 const char* getRegionStr (const PGBHEAD pHdr);
 
+// Data correction functions.
 long int getRomSizeInkB (const PGBHEAD pHdr);
-
 uint16_t correctGlobalChksum (const PGBHEAD pHdr);
-// TODO: Implement this:
+
+// Checksum functions.
+// TODO: Implement mkGbGlobalChksum.
 // uint16_t mkGbGlobalChksum (const PGBHEAD pHdr);
 uint8_t mkGbHdrChksum (const PGBHEAD pHdr);
 

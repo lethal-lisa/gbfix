@@ -30,10 +30,6 @@
 #include "inc/messages.h"
 #include "inc/runparam.h"
 
-// Declare external variables and constants:
-extern const char g_szAppName[];
-extern const char g_szAppVer[];
-
 #endif /* _GBFIX_H_ */
 
 // EOF
