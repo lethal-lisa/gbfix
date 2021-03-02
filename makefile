@@ -28,12 +28,12 @@
 ## ---------------------------------------------------------------------
 ## Set phony & default targets, and override the default suffix rules.
 ## ---------------------------------------------------------------------
-.PHONY: build clean
+.PHONY: build install package clean
 .SUFFIXES:
 
 .DEFAULT_GOAL := build
 
-## include makefile.osdetect
+include makefile.osdetect
 
 ## ---------------------------------------------------------------------
 ## Setup project details.
@@ -44,6 +44,7 @@ BUILD    :=
 SOURCES  := obj
 DATA     := 
 INCLUDES := inc
+DEST     ?= /bin/
 
 LIBS     := 
 LIBDIRS  :=
@@ -52,6 +53,13 @@ OBJS     := ${TARGET}.o
 OBJS     += ${SOURCES}/gbhead.o
 OBJS     += ${SOURCES}/messages.o
 OBJS     += ${SOURCES}/runparam.o
+
+ifdef OS_DOSLIKE
+	EXE_SUFFIX = .exe
+else
+	EXE_SUFFIX = 
+endif
+TARGET   := ${TARGET}${EXE_SUFFIX}
 
 ## ---------------------------------------------------------------------
 ## Set flags for code generation.
@@ -80,12 +88,12 @@ CXXFLAGS := ${CFLAGS} -fno-rtti -fno-exceptions
 .DELETE_ON_ERROR: ${OBJS} ${TARGET}.elf
 
 build: ${TARGET}
-	chmod +x $<
+	@chmod +x $<
 
 ## Strip binaries.
 ${TARGET}: ${TARGET}.elf
 	-@echo 'Stripping symbols from "$<"... ("$<"->"$@")'
-	${OBJCOPY} -vgO elf64-x86-64 $< $@
+	${OBJCOPY} -v -g -O elf64-x86-64 $< $@
 
 ## Link objects.
 ${TARGET}.elf: ${TARGET}.o ${OBJS}
@@ -96,6 +104,12 @@ ${TARGET}.elf: ${TARGET}.o ${OBJS}
 ${OBJS}: %.o : %.c
 	-@echo 'Compiling object "$@"... ("$<"->"$@")'
 	${CC} ${CFLAGS} -c $< -o $@
+
+## Install built file.
+install: ${TARGET}
+	-@echo 'Installing "$<"...'
+	@chmod +x $<
+	@cp -v $< ${DEST}
 
 ## Remove unnecessary binary files.
 .IGNORE: clean
