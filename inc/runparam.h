@@ -28,6 +28,38 @@
 #include "gbhead.h"
 #include <stddef.h>
 
+// ---------------------------------------------------------------------
+// Define flags.
+// ---------------------------------------------------------------------
+
+// ---------------------------------------------------------------------
+// Flags for structure tagHDR_UPDATES.
+// ---------------------------------------------------------------------
+
+enum {
+	UPF_TITLE = 0x0001,
+	UPF_MANU = 0x0002,
+	UPF_CGBF = 0x0004,
+	UPF_LICENSE = 0x0008,
+	UPF_SGBF = 0x0010,
+	UPF_CARTTYPE = 0x0020,
+	UPF_RAMSIZE = 0x0040,
+	UPF_REGION = 0x0080,
+	UPF_ROMVER = 0x0100,
+	UPF_MASK = 0x01FF
+};
+
+enum {
+	HDRREV_UNKNOWN,
+	HDRREV_DMG,
+	HDRREV_SGB,
+	HDRREV_CGB
+};
+
+// ---------------------------------------------------------------------
+// Flags for structure tagRUN_PARAMS.
+// ---------------------------------------------------------------------
+
 enum {
 	RPF_EXIT = 0x0001,
 	RPF_UNKNOWNPARAM = 0x0002,
@@ -39,15 +71,39 @@ enum {
 	RPF_MASK = 0x070F
 };
 
+// ---------------------------------------------------------------------
+// Define structures.
+// ---------------------------------------------------------------------
+
+// Structure containing information about what to update in the ROM.
+typedef struct tagHDR_UPDATES
+{
+	unsigned short int uFlags; // Flags about what is to be updated.
+	unsigned short int uHdrRev; // Header revision code.
+	PGBHEAD pHdr; // Fake header containing new information.
+} __attribute__((packed, aligned(4))) HDR_UPDATES, *PHDR_UPDATES;
+
 typedef struct tagRUN_PARAMS
 {
 	unsigned long int uFlags;
 	unsigned long int nExitCode;
+	/*unsigned long int uUpdateFlags;
+	unsigned short int uHdrRev;
 	size_t cchFileName;
 	char* pszFileName;
 	PGBHEAD pgbHdr;
+	PGBHEAD phdrUpdates;*/
+	size_t cchFileName;
+	char* pszFileName;
+	PGBHEAD pHdr;
+	PHDR_UPDATES pHdrUps;
 } __attribute__((packed, aligned(4))) RUN_PARAMS, *PRUN_PARAMS;
 
+// ---------------------------------------------------------------------
+// Declare functions.
+// ---------------------------------------------------------------------
+
+int initRunParams (PRUN_PARAMS prp);
 void setExitCode (PRUN_PARAMS pParams, const long int nExitCode);
 void doExit (PRUN_PARAMS pParams);
 

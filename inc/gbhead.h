@@ -126,30 +126,6 @@ enum {
 };
 
 // ---------------------------------------------------------------------
-// Flags for structure tagHDR_UPDATES.
-// ---------------------------------------------------------------------
-
-enum {
-	UPF_TITLE = 0x0001,
-	UPF_MANU = 0x0002,
-	UPF_CGBF = 0x0004,
-	UPF_LICENSE = 0x0008,
-	UPF_SGBF = 0x0010,
-	UPF_CARTTYPE = 0x0020,
-	UPF_RAMSIZE = 0x0040,
-	UPF_REGION = 0x0080,
-	UPF_ROMVER = 0x0100,
-	UPF_MASK = 0x01FF
-};
-
-enum {
-	HDRREV_UNKNOWN,
-	HDRREV_DMG,
-	HDRREV_SGB,
-	HDRREV_CGB
-};
-
-// ---------------------------------------------------------------------
 // Define structures.
 // ---------------------------------------------------------------------
 
@@ -178,14 +154,6 @@ typedef struct tagGBHEAD
 	//uint16_t uGlobalChksum;
 	uint8_t uGlobalChksum[2];
 } __attribute__((packed, aligned(4))) GBHEAD, *PGBHEAD;
-
-// Structure containing information about what to update in the ROM.
-typedef struct tagHDR_UPDATES
-{
-	unsigned int uFlags; // Flags about what is to be updated.
-	unsigned short uHdrRev; // Header revision code.
-	GBHEAD hdr; // Fake header containing new information.
-} HDR_UPDATES, *PHDR_UPDATES;
 
 // ---------------------------------------------------------------------
 // Declare functions.

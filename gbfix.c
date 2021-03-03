@@ -33,7 +33,7 @@
 #include "gbfix.h"
 
 const char s_pszAppName[] = "GBFix";
-const char s_pszAppVer[] = "0.3.1-proto";
+const char s_pszAppVer[] = "0.3.2-proto";
 
 int doFileOperations (PRUN_PARAMS prp);
 static inline void validateChksums (PRUN_PARAMS prp);
@@ -43,11 +43,17 @@ int main (int argc, char* argv[]) {
 	printf("%s v%s\n", s_pszAppName, s_pszAppVer);
 	
 	RUN_PARAMS rpParams; // Runtime parameters.
-	HDR_UPDATES hdrUpdates; // Header updates.
+	//HDR_UPDATES hdrUpdates; // Header updates.
 	
 	// Initialize runtime parameters.
-	memset(&rpParams, 0, sizeof(RUN_PARAMS));
-	memset(&hdrUpdates, 0, sizeof(HDR_UPDATES));
+	//memset(&rpParams, 0, sizeof(RUN_PARAMS));
+	//memset(&hdrUpdates, 0, sizeof(HDR_UPDATES));
+	if (initRunParams(&rpParams)) {
+		perror("Could not initialize runtime parameters structure.\n");
+		errno = 0;
+		setExitCode(&rpParams, EXIT_FAILURE);
+		doExit(&rpParams);
+	}
 	
 	// Process command-line arguments.
 	if (argc > 1) {
@@ -120,7 +126,6 @@ int main (int argc, char* argv[]) {
 				
 				if (rpParams.uFlags & RPF_ROMFILE || rpParams.pszFileName != NULL) {
 					fprintf(stderr, "Error: ROM file already selected. Cannot operate on two files.\n");
-					//setExitCode(&rpParams, EXIT_FAILURE);
 					break;
 				} else {
 					rpParams.uFlags |= RPF_ROMFILE;
@@ -128,11 +133,16 @@ int main (int argc, char* argv[]) {
 				
 				// Allocate string buffer.
 				rpParams.cchFileName = strlen(optarg);
-				rpParams.pszFileName = malloc(rpParams.cchFileName * sizeof(char));
+				if ((rpParams.pszFileName = malloc(rpParams.cchFileName * sizeof(char))) == NULL) {
+					perror("Could not allocate memory for file name buffer.\n");
+					errno = 0;
+					setExitCode(&rpParams, EXIT_FAILURE);
+					break;
+				}
+				memset(rpParams.pszFileName, 0, rpParams.cchFileName * sizeof(char));
 				
 				// Copy into string buffer.
-				if ((rpParams.pszFileName == NULL) || 
-				!strncpy(rpParams.pszFileName, optarg, rpParams.cchFileName)) {
+				if (!strncpy(rpParams.pszFileName, optarg, rpParams.cchFileName)) {
 					perror("Could not copy file name to internal buffer.\n");
 					errno = 0;
 					setExitCode(&rpParams, EXIT_FAILURE);
@@ -156,65 +166,64 @@ int main (int argc, char* argv[]) {
 				// Set ROM region.
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
-				hdrUpdates.uFlags |= UPF_REGION;
-				hdrUpdates.hdr.uRegion = (uint8_t)strtoul(optarg, NULL, 0);
+				rpParams.pHdrUps->uFlags |= UPF_REGION;
+				rpParams.pHdrUps->pHdr->uRegion = (uint8_t)strtoul(optarg, NULL, 0);
 				break;
 				
 			case 's':
 				// Set SGB flags.
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
-				hdrUpdates.uFlags |= UPF_SGBF;
-				hdrUpdates.hdr.uSgbFlag = (uint8_t)strtoul(optarg, NULL, 0);
+				rpParams.pHdrUps->uFlags |= UPF_SGBF;
+				rpParams.pHdrUps->pHdr->uSgbFlag = (uint8_t)strtoul(optarg, NULL, 0);
 				break;
 				
 			case 'V':
 				// Set ROM version.
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
-				hdrUpdates.uFlags |= UPF_ROMVER;
-				hdrUpdates.hdr.uRomVer = (uint8_t)strtoul(optarg, NULL, 0);
+				rpParams.pHdrUps->uFlags |= UPF_ROMVER;
+				rpParams.pHdrUps->pHdr->uRomVer = (uint8_t)strtoul(optarg, NULL, 0);
 				break;
 				
 			case 't':
 				// Set ROM title.
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
-				hdrUpdates.uFlags |= UPF_TITLE;
-				strncpy(hdrUpdates.hdr.title.szTitle, optarg, 15);
+				rpParams.pHdrUps->uFlags |= UPF_TITLE;
+				strncpy(rpParams.pHdrUps->pHdr->title.szTitle, optarg, 15);
 				break;
 				
 			case 'm':
 				// Set manufacturer.
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
-				hdrUpdates.uFlags |= UPF_MANU;
-				//strncpy(hdrUpdates.hdr.title.newTitle.strManufacturer, optarg, );
-				memcpy(hdrUpdates.hdr.title.newTitle.strManufacturer, optarg, 4);
+				rpParams.pHdrUps->uFlags |= UPF_MANU;
+				memcpy(rpParams.pHdrUps->pHdr->title.newTitle.strManufacturer, optarg, 4);
 				break;
 				
 			case 'c':
 				// Set CGB flags.
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
-				hdrUpdates.uFlags |= UPF_CGBF;
-				hdrUpdates.hdr.title.newTitle.uCgbFlag = (uint8_t)strtoul(optarg, NULL, 0);
+				rpParams.pHdrUps->uFlags |= UPF_CGBF;
+				rpParams.pHdrUps->pHdr->title.newTitle.uCgbFlag = (uint8_t)strtoul(optarg, NULL, 0);
 				break;
 				
 			case 'C':
 				// Set cart type.
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
-				hdrUpdates.uFlags |= UPF_CARTTYPE;
-				hdrUpdates.hdr.uCartType = (uint8_t)strtoul(optarg, NULL, 0);
+				rpParams.pHdrUps->uFlags |= UPF_CARTTYPE;
+				rpParams.pHdrUps->pHdr->uCartType = (uint8_t)strtoul(optarg, NULL, 0);
 				break;
 				
 			case 'R':
 				// Set RAM size.
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
-				hdrUpdates.uFlags |= UPF_RAMSIZE;
-				hdrUpdates.hdr.uCartType = (uint8_t)strtoul(optarg, NULL, 0);
+				rpParams.pHdrUps->uFlags |= UPF_RAMSIZE;
+				rpParams.pHdrUps->pHdr->uCartType = (uint8_t)strtoul(optarg, NULL, 0);
 				break;
 				
 			case '?':
@@ -233,6 +242,7 @@ int main (int argc, char* argv[]) {
 		setExitCode(&rpParams, EXIT_FAILURE);
 	}
 	
+	// Perform operations on the ROM header.
 	if (doFileOperations(&rpParams))
 		fprintf(stderr, "Error: Fatal error while performing file operations.\n");
 	
@@ -265,7 +275,7 @@ int doFileOperations (PRUN_PARAMS prp) {
 	}
 	
 	// Allocate header buffer.
-	if ((prp->pgbHdr = malloc(sizeof(GBHEAD))) == NULL) {
+	if ((prp->pHdr = malloc(sizeof(GBHEAD))) == NULL) {
 		perror("Could not allocate buffer for header.\n");
 		errno = 0;
 		setExitCode(prp, EXIT_FAILURE);
@@ -273,7 +283,7 @@ int doFileOperations (PRUN_PARAMS prp) {
 	}
 	
 	// Read header from file.
-	if (loadHeaderFromFile(prp->pszFileName, prp->pgbHdr)) {
+	if (loadHeaderFromFile(prp->pszFileName, prp->pHdr)) {
 		perror("Failed to load ROM header.\n");
 		errno = 0;
 		setExitCode(prp, EXIT_FAILURE);
@@ -283,10 +293,8 @@ int doFileOperations (PRUN_PARAMS prp) {
 	// Print ROM info.
 	if (!(prp->uFlags & RPF_NOROMINFO)) {
 		printf("Using file: \"%s\"\n", prp->pszFileName);
-		printRomInfo(prp->pgbHdr);
+		printRomInfo(prp->pHdr);
 	}
-	
-	validateChksums(prp);
 	
 	// Skip file updates if update flag not set.
 	if (!(prp->uFlags & RPF_UPDATEROM)) {
@@ -296,10 +304,12 @@ int doFileOperations (PRUN_PARAMS prp) {
 	
 	// TODO: Add routine to copy updates from the update structure into header to write back.
 	
+	validateChksums(prp);
+	
 	// Print updated ROM header information.
 	if (prp->uFlags & RPF_VERBOSE || prp->uFlags & RPF_DRYRUN) {
 		printf("Updated ROM header:\n");
-		printRomInfo(prp->pgbHdr);
+		printRomInfo(prp->pHdr);
 	}
 	
 	// Prevent save if dry run is enabled.
@@ -309,7 +319,7 @@ int doFileOperations (PRUN_PARAMS prp) {
 	}
 	
 	// Write header back to file.
-	if (saveHeaderToFile(prp->pszFileName, prp->pgbHdr)) {
+	if (saveHeaderToFile(prp->pszFileName, prp->pHdr)) {
 		perror("Failed to save ROM header to file.\n");
 		errno = 0;
 		setExitCode(prp, EXIT_FAILURE);
@@ -324,12 +334,13 @@ int doFileOperations (PRUN_PARAMS prp) {
 
 static inline void validateChksums (PRUN_PARAMS prp) {
 	
-	uint8_t uNewHdrChksum = mkGbHdrChksum(prp->pgbHdr);
+	uint8_t uNewHdrChksum = mkGbHdrChksum(prp->pHdr);
 	// uint16_t uNewGlobalChksum = mkGbHdrGlobalChksum(prp->pgbHdr);
 	
-	if (prp->pgbHdr->uHdrChksum != uNewHdrChksum) {
+	if (prp->pHdr->uHdrChksum != uNewHdrChksum) {
 		if (prp->uFlags & RPF_UPDATEROM) {
-			prp->pgbHdr->uHdrChksum = uNewHdrChksum;
+			if (prp->uFlags & RPF_VERBOSE) printf("Updating header checksum to 0x%X.\n", uNewHdrChksum);
+			prp->pHdr->uHdrChksum = uNewHdrChksum;
 		} else {
 			printf("Warning: Header checksum is invalid. ROM will be unbootable! Correct value is 0x%X.\n", uNewHdrChksum);
 		}
@@ -338,7 +349,8 @@ static inline void validateChksums (PRUN_PARAMS prp) {
 	/*
 	if (correctGlobalChksum(prp->pgbHdr) != uNewGlobalChksum) {
 		if (prp->uFlags & RPF_UPDATEROM) {
-			prp->pgbHdr->uGlobalChksum = uNewGlobalChksum;
+			if (prp->uFlags & RPF_VERBOSE) printf("Updating global checksum to 0x%X.\n", uNewHdrChksum);
+			prp->pHdr->uGlobalChksum = uNewGlobalChksum;
 		} else {
 			printf("Warning: Global checksum is invalid. Real hardware \
 will not care, but emulators might give warnings!\n");

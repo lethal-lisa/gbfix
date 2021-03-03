@@ -23,10 +23,36 @@
  */
 
 // Include used C header(s):
+#include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 
 // Include module header(s):
 #include "../inc/runparam.h"
+
+int initRunParams (PRUN_PARAMS prp) {
+	
+	if (prp == NULL) {
+		errno = EFAULT;
+		return 1;
+	}
+	
+	if (prp->pHdrUps != NULL) {
+		errno = EINVAL;
+		return 1;
+	}
+	
+	memset(prp, 0, sizeof(RUN_PARAMS));
+	
+	if ((prp->pHdrUps = malloc(sizeof(HDR_UPDATES))) == NULL) return 1;
+	memset(prp->pHdrUps, 0, sizeof(HDR_UPDATES));
+	
+	if ((prp->pHdrUps->pHdr = malloc(sizeof(GBHEAD))) == NULL) return 1;
+	memset(prp->pHdrUps->pHdr, 0, sizeof(GBHEAD));
+	
+	return 0;
+	
+}
 
 void setExitCode (PRUN_PARAMS pParams, const long int nExitCode) {
 	
@@ -44,11 +70,17 @@ void doExit (PRUN_PARAMS pParams) {
 	// Make sure pParams is non-null.
 	if (pParams == NULL) exit(EXIT_FAILURE);
 	
-	// Deallocate runtime params.
+	// Free filename buffer.
 	if (pParams->pszFileName != NULL) free(pParams->pszFileName);
 	
-	// Deallocate GB header struct.
-	if (pParams->pgbHdr != NULL) free(pParams->pgbHdr);
+	// Free GB header struct.
+	if (pParams->pHdr != NULL) free(pParams->pHdr);
+	
+	// Free header updates structure.
+	if (pParams->pHdrUps != NULL) {
+		if (pParams->pHdrUps->pHdr != NULL) free(pParams->pHdrUps->pHdr);
+		free(pParams->pHdrUps);
+	}
 	
 	// Check for specific exit flag.
 	if ((pParams->uFlags & RPF_MASK) & RPF_EXIT) exit(pParams->nExitCode);
