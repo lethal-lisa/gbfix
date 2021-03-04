@@ -199,7 +199,6 @@ int main (int argc, char* argv[]) {
 					cbTitle = 16;
 				}
 				
-				//strncpy(rpParams.pHdrUps->htTitle.oldTitle.strTitle, optarg, 15);
 				memset(&rpParams.pHdrUps->htTitle.oldTitle.strTitle, 0, 16);
 				strncpy(rpParams.pHdrUps->htTitle.oldTitle.strTitle, optarg, cbTitle);
 				break;
