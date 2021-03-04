@@ -6,6 +6,6 @@ toolchains.
 
 Currently only a prototype!
 
-The terms "GameBoy", "GameBoy Color", "Nintendo", and other related
-terms are the intellectual property of Nintendo. This program is not in
-any way affiliated with Nintendo.
+The terms "GameBoy", "Super GameBoy", "GameBoy Color", "Nintendo", and
+other related terms are the intellectual property of Nintendo. This
+program is not in any way affiliated with, or acknowledged by Nintendo.
