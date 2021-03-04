@@ -69,16 +69,16 @@ CC       := gcc
 LD       := gcc
 OBJCOPY  := objcopy
 
-CFLAGS   =  -g -Wall -O3\
-	-fomit-frame-pointer -ffast-math -fno-strict-aliasing -fshort-enums
+CFLAGS   =  -Wall -O3\
+	-funsigned-char\
+	-fomit-frame-pointer -fno-strict-aliasing -fshort-enums\
+	-fno-printf-return-value
 
 ifdef INCLUDE
 	CFLAGS += ${INCLUDE}
 endif
 
 LDFLAGS  := ${CFLAGS}
-
-CXXFLAGS := ${CFLAGS} -fno-rtti -fno-exceptions
 
 ## ---------------------------------------------------------------------
 ## Compilation rules.
