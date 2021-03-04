@@ -37,22 +37,38 @@ void printRomInfo (const PGBHEAD pgbHdr) {
 		return;
 	}
 	
+	// Compute header revision.
+	unsigned int uHdrRev = getHdrRev(pgbHdr);
+	
 	printf(g_szDivider, "ROM Info");
 	
-	printf("\nDMG/SGB Format Title:\n");
-	printf("\tTitle:\t\t\t\"%s\"\n\n", pgbHdr->title.szTitle);
+	printf("\tHeader Format:      %s\n", getHdrRevStr(uHdrRev));
 	
-	printf("CGB Format Title:\n");
-	printf("\tTitle:\t\t\t\"%s\"\n", pgbHdr->title.newTitle.szTitle);
-	printf("\tManufacturer:\t\t\"%s\"\n", pgbHdr->title.newTitle.strManufacturer);
-	printf("\tCGB Flags:\t\t0x%X\n\n", pgbHdr->title.newTitle.uCgbFlag);
+	// Print out title information.
+	switch (uHdrRev) {
+	case HDRREV_DMG:
+	case HDRREV_SGB:
+		printf("\tTitle:              \"%s\"\n", pgbHdr->htTitle.oldTitle.strTitle);
+		break;
+	case HDRREV_CGB:
+		printf("\tTitle (Old Format): \"%s\"\n", pgbHdr->htTitle.oldTitle.strTitle);
+		printf("\tTitle (New Format): \"%s\"\n", pgbHdr->htTitle.newTitle.strTitle);
+		printf("\tManufacturer:       \"%s\"\n", pgbHdr->htTitle.newTitle.strManufacturer);
+		printf("\tCGB Flags:          0x%X\n", pgbHdr->htTitle.newTitle.uCgbFlag);
+		break;
+	default:
+		fprintf(stderr, "Error: Invalid header format.\n");
+		return;
+	}
 	
-	printf("\tLicensee Code:\t\t0x%X (%s type)\n", getLicenseeCode(pgbHdr), getLicenseeTypeStr(pgbHdr));
-	printf("\tROM Size:\t\t%ldkB (%ldB)\n", getRomSizeInkB(pgbHdr), getRomSizeInkB(pgbHdr) * 1024);
-	printf("\tRegion:\t\t\t%s (0x%X)\n", getRegionStr(pgbHdr), pgbHdr->uRegion);
-	printf("\tROM Version:\t\t0x%X\n", pgbHdr->uRomVer);
-	printf("\tHeader Checksum:\t0x%X\n", pgbHdr->uHdrChksum);
-	printf("\tGlobal Checksum:\t0x%X\n", correctGlobalChksum(pgbHdr));
+	// Print out remaining header information.
+	printf("\tLicensee Code:      0x%X (%s type)\n", getLicenseeCode(pgbHdr), getLicenseeTypeStr(pgbHdr));
+	printf("\tSGB Flags:          0x%X\n", pgbHdr->uSgbFlag);
+	printf("\tROM Size:           %ldkB (%ldB)\n", getRomSizeInkB(pgbHdr), getRomSizeInkB(pgbHdr) * 1024);
+	printf("\tRegion:             %s (0x%X)\n", getRegionStr(pgbHdr), pgbHdr->uRegion);
+	printf("\tROM Version:        0x%X\n", pgbHdr->uRomVer);
+	printf("\tHeader Checksum:    0x%X\n", pgbHdr->uHdrChksum);
+	printf("\tGlobal Checksum:    0x%X\n", correctGlobalChksum(pgbHdr));
 	
 	printf("\n");
 	

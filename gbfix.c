@@ -33,27 +33,28 @@
 #include "gbfix.h"
 
 const char s_pszAppName[] = "GBFix";
-const char s_pszAppVer[] = "0.3.2-proto";
+const char s_pszAppVer[] = "0.3.3-proto";
 
 int doFileOperations (PRUN_PARAMS prp);
 static inline void validateChksums (PRUN_PARAMS prp);
 
 int main (int argc, char* argv[]) {
 	
+	// Print application name and version identifier.
 	printf("%s v%s\n", s_pszAppName, s_pszAppVer);
 	
 	RUN_PARAMS rpParams; // Runtime parameters.
-	//HDR_UPDATES hdrUpdates; // Header updates.
 	
 	// Initialize runtime parameters.
-	//memset(&rpParams, 0, sizeof(RUN_PARAMS));
-	//memset(&hdrUpdates, 0, sizeof(HDR_UPDATES));
-	if (initRunParams(&rpParams)) {
-		perror("Could not initialize runtime parameters structure.\n");
-		errno = 0;
+	memset(&rpParams, 0, sizeof(RUN_PARAMS));
+	
+	if ((rpParams.pHdrUps = malloc(sizeof(HDR_UPDATES))) == NULL) {
+		fprintf(stderr, "Error: Could not allocate buffer for header updates.\n");
 		setExitCode(&rpParams, EXIT_FAILURE);
 		doExit(&rpParams);
 	}
+	
+	memset(rpParams.pHdrUps, 0, sizeof(HDR_UPDATES));
 	
 	// Process command-line arguments.
 	if (argc > 1) {
@@ -167,7 +168,7 @@ int main (int argc, char* argv[]) {
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
 				rpParams.pHdrUps->uFlags |= UPF_REGION;
-				rpParams.pHdrUps->pHdr->uRegion = (uint8_t)strtoul(optarg, NULL, 0);
+				rpParams.pHdrUps->uRegion = (uint8_t)strtoul(optarg, NULL, 0);
 				break;
 				
 			case 's':
@@ -175,7 +176,7 @@ int main (int argc, char* argv[]) {
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
 				rpParams.pHdrUps->uFlags |= UPF_SGBF;
-				rpParams.pHdrUps->pHdr->uSgbFlag = (uint8_t)strtoul(optarg, NULL, 0);
+				rpParams.pHdrUps->uSgbFlag = (uint8_t)strtoul(optarg, NULL, 0);
 				break;
 				
 			case 'V':
@@ -183,7 +184,7 @@ int main (int argc, char* argv[]) {
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
 				rpParams.pHdrUps->uFlags |= UPF_ROMVER;
-				rpParams.pHdrUps->pHdr->uRomVer = (uint8_t)strtoul(optarg, NULL, 0);
+				rpParams.pHdrUps->uRomVer = (uint8_t)strtoul(optarg, NULL, 0);
 				break;
 				
 			case 't':
@@ -191,7 +192,16 @@ int main (int argc, char* argv[]) {
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
 				rpParams.pHdrUps->uFlags |= UPF_TITLE;
-				strncpy(rpParams.pHdrUps->pHdr->title.szTitle, optarg, 15);
+				
+				size_t cbTitle = strlen(optarg);
+				if (cbTitle > 16) {
+					fprintf(stderr, "Warning: Maximum title length exceeded. Output will be truncated.\n");
+					cbTitle = 16;
+				}
+				
+				//strncpy(rpParams.pHdrUps->htTitle.oldTitle.strTitle, optarg, 15);
+				memset(&rpParams.pHdrUps->htTitle.oldTitle.strTitle, 0, 16);
+				strncpy(rpParams.pHdrUps->htTitle.oldTitle.strTitle, optarg, cbTitle);
 				break;
 				
 			case 'm':
@@ -199,7 +209,14 @@ int main (int argc, char* argv[]) {
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
 				rpParams.pHdrUps->uFlags |= UPF_MANU;
-				memcpy(rpParams.pHdrUps->pHdr->title.newTitle.strManufacturer, optarg, 4);
+				
+				size_t cbManu = strlen(optarg);
+				if (cbManu > 4) {
+					fprintf(stderr, "Warning: Maximum manufacturer code length exceeded. Output will be truncated.\n");
+					cbManu = 4;
+				}
+				memset(&rpParams.pHdrUps->htTitle.newTitle.strManufacturer, 0, 4);
+				memcpy(rpParams.pHdrUps->htTitle.newTitle.strManufacturer, optarg, cbManu);
 				break;
 				
 			case 'c':
@@ -207,7 +224,7 @@ int main (int argc, char* argv[]) {
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
 				rpParams.pHdrUps->uFlags |= UPF_CGBF;
-				rpParams.pHdrUps->pHdr->title.newTitle.uCgbFlag = (uint8_t)strtoul(optarg, NULL, 0);
+				rpParams.pHdrUps->htTitle.newTitle.uCgbFlag = (uint8_t)strtoul(optarg, NULL, 0);
 				break;
 				
 			case 'C':
@@ -215,7 +232,7 @@ int main (int argc, char* argv[]) {
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
 				rpParams.pHdrUps->uFlags |= UPF_CARTTYPE;
-				rpParams.pHdrUps->pHdr->uCartType = (uint8_t)strtoul(optarg, NULL, 0);
+				rpParams.pHdrUps->uCartType = (uint8_t)strtoul(optarg, NULL, 0);
 				break;
 				
 			case 'R':
@@ -223,7 +240,7 @@ int main (int argc, char* argv[]) {
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
 				rpParams.pHdrUps->uFlags |= UPF_RAMSIZE;
-				rpParams.pHdrUps->pHdr->uCartType = (uint8_t)strtoul(optarg, NULL, 0);
+				rpParams.pHdrUps->uRamSize = (uint8_t)strtoul(optarg, NULL, 0);
 				break;
 				
 			case '?':

@@ -62,6 +62,20 @@
 // Define flags.
 // ---------------------------------------------------------------------
 
+enum {
+	HDRREV_DMG, // Original header revision.
+	HDRREV_SGB, // Super GameBoy header revision.
+	HDRREV_CGB, // GameBoy Color header revision.
+	// HDRREV_CGB2, // Second GameBoy Color header revision (with manufacturer field).
+	HDRREV_UNKNOWN // Unknown header revision.
+};
+
+enum {
+	LICETYPE_OLD,
+	LICETYPE_NEW,
+	LICETYPE_UNKNOWN
+};
+
 // ---------------------------------------------------------------------
 // Flags for structure tagGBHEAD.
 // ---------------------------------------------------------------------
@@ -73,12 +87,6 @@ enum {
 	CGBF_PGB2 = 0x08,
 	CGBF_CGBONLY = 0x40,
 	CGBF_MASK = 0xCC
-};
-
-enum {
-	LICETYPE_OLD,
-	LICETYPE_NEW,
-	LICETYPE_UNKNOWN
 };
 
 // SGB feature flags:
@@ -129,19 +137,36 @@ enum {
 // Define structures.
 // ---------------------------------------------------------------------
 
+typedef struct tagGBH_TITLE
+{
+	union {
+		struct tagOldTitle
+		{
+			char strTitle[16] __attribute__((nonstring));
+		} oldTitle;
+		struct tagNewTitle
+		{
+			char strTitle[11] __attribute__((nonstring));
+			char strManufacturer[4] __attribute__((nonstring));
+			uint8_t uCgbFlag;
+		} newTitle;
+	};
+} __attribute__((packed, aligned(4))) GBH_TITLE, *PGBH_TITLE;
+
 // GameBoy ROM header structure.
 typedef struct tagGBHEAD
 {
 	uint8_t uEntryPoint[4];
 	uint8_t uNintendoLogo[48];
-	union tagTitle {
+	/*union tagTitle {
 		char szTitle[16];
 		struct tagNewTitle {
-			char szTitle[11];
+			char strTitle[11];
 			char strManufacturer[4];
 			uint8_t uCgbFlag;
 		} newTitle;
-	} title;
+	} title;*/
+	GBH_TITLE htTitle;
 	uint8_t uLicensee[2];
 	uint8_t uSgbFlag;
 	uint8_t uCartType;
@@ -159,11 +184,14 @@ typedef struct tagGBHEAD
 // Declare functions.
 // ---------------------------------------------------------------------
 
+unsigned int getHdrRev (const PGBHEAD pHdr);
+
 // Licensee code functions.
 int isNewLicensee (const PGBHEAD pHdr);
 uint8_t getLicenseeCode (const PGBHEAD pHdr);
 
 // String retrieval functions.
+const char* getHdrRevStr (const unsigned int uHdrRev);
 const char* getLicenseeTypeStr (const PGBHEAD pHdr);
 const char* getRegionStr (const PGBHEAD pHdr);
 

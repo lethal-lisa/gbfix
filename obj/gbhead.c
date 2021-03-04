@@ -33,6 +33,24 @@
 
 const char s_pszUnknown[] = "Unknown";
 
+unsigned int getHdrRev (const PGBHEAD pHdr) {
+	
+	if (pHdr == NULL) {
+		errno = EFAULT;
+		return HDRREV_UNKNOWN;
+	}
+	
+	uint8_t uCgbFlag = pHdr->htTitle.newTitle.uCgbFlag & ~(CGBF_PGB1 | CGBF_PGB2);
+	
+	if (uCgbFlag != 0 &&
+		(!(uCgbFlag & ~CGBF_FUNC) || !(uCgbFlag & ~CGBF_CGBONLY))) return HDRREV_CGB;
+	
+	if (pHdr->uSgbFlag != 0) return HDRREV_SGB;
+	
+	return HDRREV_DMG;
+	
+}
+
 /*
  * 
  * name: isNewLicensee
@@ -93,6 +111,17 @@ uint8_t getLicenseeCode (const PGBHEAD pHdr) {
 		return 0;
 	}
 	return pHdr->uLicensee[0];
+	
+}
+
+const char* getHdrRevStr (const unsigned int uHdrRev) {
+	
+	switch (uHdrRev) {
+	case HDRREV_DMG: return "DMG";
+	case HDRREV_SGB: return "SGB";
+	case HDRREV_CGB: return "CGB";
+	default: return s_pszUnknown;
+	}
 	
 }
 

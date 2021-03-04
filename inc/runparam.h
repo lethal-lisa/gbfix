@@ -49,26 +49,19 @@ enum {
 	UPF_MASK = 0x01FF
 };
 
-enum {
-	HDRREV_UNKNOWN,
-	HDRREV_DMG,
-	HDRREV_SGB,
-	HDRREV_CGB
-};
-
 // ---------------------------------------------------------------------
 // Flags for structure tagRUN_PARAMS.
 // ---------------------------------------------------------------------
 
 enum {
-	RPF_EXIT = 0x0001,
-	RPF_UNKNOWNPARAM = 0x0002,
-	RPF_VERBOSE = 0x0004,
-	RPF_NOROMINFO = 0x0008,
-	RPF_ROMFILE = 0x0100,
-	RPF_UPDATEROM = 0x0200,
-	RPF_DRYRUN = 0x0400,
-	RPF_MASK = 0x070F
+	RPF_EXIT = 0x0001, // Enable exit.
+	RPF_UNKNOWNPARAM = 0x0002, // Unknown command line parameter detected.
+	RPF_VERBOSE = 0x0004, // Verbose mode enabled.
+	RPF_NOROMINFO = 0x0008, // Disable ROM info output.
+	RPF_ROMFILE = 0x0100, // ROM file specified.
+	RPF_UPDATEROM = 0x0200, // ROM is to be updated.
+	RPF_DRYRUN = 0x0400, // Dry-run mode enabled.
+	RPF_MASK = 0x070F // Mask of all flags.
 };
 
 // ---------------------------------------------------------------------
@@ -78,32 +71,34 @@ enum {
 // Structure containing information about what to update in the ROM.
 typedef struct tagHDR_UPDATES
 {
-	unsigned short int uFlags; // Flags about what is to be updated.
-	unsigned short int uHdrRev; // Header revision code.
-	PGBHEAD pHdr; // Fake header containing new information.
+	unsigned long int uFlags; // Flags about what is to be updated.
+	// unsigned short int uHdrRev; // Header revision code.
+	// PGBHEAD pHdr; // Fake header containing new information.
+	GBH_TITLE htTitle;
+	uint8_t uLicensee;
+	uint8_t uSgbFlag;
+	uint8_t uCartType;
+	uint8_t uRamSize;
+	uint8_t uRegion;
+	uint8_t uRomVer;
 } __attribute__((packed, aligned(4))) HDR_UPDATES, *PHDR_UPDATES;
 
+// Structure containing information about the user's choices and what
+// operations to perform.
 typedef struct tagRUN_PARAMS
 {
-	unsigned long int uFlags;
-	unsigned long int nExitCode;
-	/*unsigned long int uUpdateFlags;
-	unsigned short int uHdrRev;
-	size_t cchFileName;
-	char* pszFileName;
-	PGBHEAD pgbHdr;
-	PGBHEAD phdrUpdates;*/
-	size_t cchFileName;
-	char* pszFileName;
-	PGBHEAD pHdr;
-	PHDR_UPDATES pHdrUps;
+	unsigned long int uFlags; // Flags about
+	unsigned long int nExitCode; // Code to exit with.
+	size_t cchFileName; // Length of file name buffer in chars.
+	char* pszFileName; // File name buffer.
+	PGBHEAD pHdr; // Pointer to ROM header structure.
+	PHDR_UPDATES pHdrUps; // Pointer to header updates structure.
 } __attribute__((packed, aligned(4))) RUN_PARAMS, *PRUN_PARAMS;
 
 // ---------------------------------------------------------------------
 // Declare functions.
 // ---------------------------------------------------------------------
 
-int initRunParams (PRUN_PARAMS prp);
 void setExitCode (PRUN_PARAMS pParams, const long int nExitCode);
 void doExit (PRUN_PARAMS pParams);
 

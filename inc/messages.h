@@ -27,10 +27,16 @@
 
 #include "gbhead.h"
 
-// Declare external variables and constants:
+// ---------------------------------------------------------------------
+// Declare external variables and constants.
+// ---------------------------------------------------------------------
+
 extern const char g_szDivider[];
 
-// Declare functions:
+// ---------------------------------------------------------------------
+// Declare functions.
+// ---------------------------------------------------------------------
+
 void printRomInfo (const PGBHEAD pgbHdr);
 
 void printGplNotice ();
