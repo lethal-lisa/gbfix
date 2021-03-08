@@ -53,10 +53,6 @@ void doExit (PRUN_PARAMS pParams) {
 	if (pParams->pHdr != NULL) free(pParams->pHdr);
 	
 	// Free header updates structure.
-	/*if (pParams->pHdrUps != NULL) {
-		if (pParams->pHdrUps->pHdr != NULL) free(pParams->pHdrUps->pHdr);
-		free(pParams->pHdrUps);
-	}*/
 	if (pParams->pHdrUps != NULL) free(pParams->pHdrUps);
 	
 	// Check for specific exit flag.
