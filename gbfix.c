@@ -33,7 +33,8 @@
 #include "gbfix.h"
 
 const char s_pszAppName[] = "GBFix";
-const char s_pszAppVer[] = "0.3.3-proto";
+const char s_pszAppVer[] = "0.3.4-proto";
+const char s_pszCopyright[] = "Copyright 2021 Lisa Murray";
 
 int doFileOperations (PRUN_PARAMS prp);
 static inline void validateChksums (PRUN_PARAMS prp);
@@ -41,7 +42,7 @@ static inline void validateChksums (PRUN_PARAMS prp);
 int main (int argc, char* argv[]) {
 	
 	// Print application name and version identifier.
-	printf("%s v%s\n", s_pszAppName, s_pszAppVer);
+	printf("%s v%s\n%s\n", s_pszAppName, s_pszAppVer, s_pszCopyright);
 	
 	RUN_PARAMS rpParams; // Runtime parameters.
 	
@@ -110,7 +111,7 @@ int main (int argc, char* argv[]) {
 					
 				default:
 					// Handle unsupported long option.
-					fprintf(stderr, "Error: Unsupported long option: %s (%d)\n", optLongOpts[iLongOpt].name, iLongOpt);
+					fprintf(stderr, "Error: Unsupported long option: \"%s\"\n", optLongOpts[iLongOpt].name);
 					setExitCode(&rpParams, EXIT_FAILURE);
 					
 				}
@@ -193,14 +194,14 @@ int main (int argc, char* argv[]) {
 				
 				rpParams.pHdrUps->uFlags |= UPF_TITLE;
 				
-				size_t cbTitle = strlen(optarg);
-				if (cbTitle > 16) {
+				size_t cchTitle = strlen(optarg);
+				if (cchTitle > 16) {
 					fprintf(stderr, "Warning: Maximum title length exceeded. Output will be truncated.\n");
-					cbTitle = 16;
+					cchTitle = 16;
 				}
 				
-				memset(&rpParams.pHdrUps->htTitle.oldTitle.strTitle, 0, 16);
-				strncpy(rpParams.pHdrUps->htTitle.oldTitle.strTitle, optarg, cbTitle);
+				memset(rpParams.pHdrUps->pszTitle, 0, 17);
+				strncpy(rpParams.pHdrUps->pszTitle, optarg, cchTitle);
 				break;
 				
 			case 'm':
@@ -209,13 +210,14 @@ int main (int argc, char* argv[]) {
 				
 				rpParams.pHdrUps->uFlags |= UPF_MANU;
 				
-				size_t cbManu = strlen(optarg);
-				if (cbManu > 4) {
+				size_t cchManu = strlen(optarg);
+				if (cchManu > 4) {
 					fprintf(stderr, "Warning: Maximum manufacturer code length exceeded. Output will be truncated.\n");
-					cbManu = 4;
+					cchManu = 4;
 				}
-				memset(&rpParams.pHdrUps->htTitle.newTitle.strManufacturer, 0, 4);
-				memcpy(rpParams.pHdrUps->htTitle.newTitle.strManufacturer, optarg, cbManu);
+				
+				memset(rpParams.pHdrUps->pszManu, 0, 5);
+				strncpy(rpParams.pHdrUps->pszManu, optarg, cchManu);
 				break;
 				
 			case 'c':
@@ -223,7 +225,7 @@ int main (int argc, char* argv[]) {
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
 				rpParams.pHdrUps->uFlags |= UPF_CGBF;
-				rpParams.pHdrUps->htTitle.newTitle.uCgbFlag = (uint8_t)strtoul(optarg, NULL, 0);
+				rpParams.pHdrUps->uCgbFlag = (uint8_t)strtoul(optarg, NULL, 0);
 				break;
 				
 			case 'C':

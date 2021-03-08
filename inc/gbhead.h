@@ -66,7 +66,6 @@ enum {
 	HDRREV_DMG, // Original header revision.
 	HDRREV_SGB, // Super GameBoy header revision.
 	HDRREV_CGB, // GameBoy Color header revision.
-	// HDRREV_CGB2, // Second GameBoy Color header revision (with manufacturer field).
 	HDRREV_UNKNOWN // Unknown header revision.
 };
 
@@ -158,14 +157,6 @@ typedef struct tagGBHEAD
 {
 	uint8_t uEntryPoint[4];
 	uint8_t uNintendoLogo[48];
-	/*union tagTitle {
-		char szTitle[16];
-		struct tagNewTitle {
-			char strTitle[11];
-			char strManufacturer[4];
-			uint8_t uCgbFlag;
-		} newTitle;
-	} title;*/
 	GBH_TITLE htTitle;
 	uint8_t uLicensee[2];
 	uint8_t uSgbFlag;
@@ -176,7 +167,6 @@ typedef struct tagGBHEAD
 	uint8_t uOldLicensee;
 	uint8_t uRomVer;
 	uint8_t uHdrChksum;
-	//uint16_t uGlobalChksum;
 	uint8_t uGlobalChksum[2];
 } __attribute__((packed, aligned(4))) GBHEAD, *PGBHEAD;
 

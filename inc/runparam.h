@@ -58,10 +58,10 @@ enum {
 	RPF_UNKNOWNPARAM = 0x0002, // Unknown command line parameter detected.
 	RPF_VERBOSE = 0x0004, // Verbose mode enabled.
 	RPF_NOROMINFO = 0x0008, // Disable ROM info output.
-	RPF_ROMFILE = 0x0100, // ROM file specified.
-	RPF_UPDATEROM = 0x0200, // ROM is to be updated.
-	RPF_DRYRUN = 0x0400, // Dry-run mode enabled.
-	RPF_MASK = 0x070F // Mask of all flags.
+	RPF_ROMFILE = 0x0010, // ROM file specified.
+	RPF_UPDATEROM = 0x0020, // ROM is to be updated.
+	RPF_DRYRUN = 0x0040, // Dry-run mode enabled.
+	RPF_MASK = 0x007F // Mask of all flags.
 };
 
 // ---------------------------------------------------------------------
@@ -72,9 +72,9 @@ enum {
 typedef struct tagHDR_UPDATES
 {
 	unsigned long int uFlags; // Flags about what is to be updated.
-	// unsigned short int uHdrRev; // Header revision code.
-	// PGBHEAD pHdr; // Fake header containing new information.
-	GBH_TITLE htTitle;
+	char pszTitle[17];
+	char pszManu[5];
+	uint8_t uCgbFlag;
 	uint8_t uLicensee;
 	uint8_t uSgbFlag;
 	uint8_t uCartType;
@@ -91,6 +91,7 @@ typedef struct tagRUN_PARAMS
 	unsigned long int nExitCode; // Code to exit with.
 	size_t cchFileName; // Length of file name buffer in chars.
 	char* pszFileName; // File name buffer.
+	unsigned long int uHdrRev; // Header revision code.
 	PGBHEAD pHdr; // Pointer to ROM header structure.
 	PHDR_UPDATES pHdrUps; // Pointer to header updates structure.
 } __attribute__((packed, aligned(4))) RUN_PARAMS, *PRUN_PARAMS;
