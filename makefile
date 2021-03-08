@@ -4,14 +4,15 @@
 ## 
 ## Usage:
 ## make [build] - Build GBFix.
+## sudo make install - Install built package to ${DEST}.
 ## make clean   - Remove extra files.
 ## 
 ## Copyright 2021 Lisa Murray
 ## 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation; either version 2 of the License, or
-## (at your option) any later version.
+## the Free Software Foundation; either version 3 of the License, or
+## any later version.
 ## 
 ## This program is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -28,7 +29,7 @@
 ## ---------------------------------------------------------------------
 ## Set phony & default targets, and override the default suffix rules.
 ## ---------------------------------------------------------------------
-.PHONY: build install package clean
+.PHONY: build install clean
 .SUFFIXES:
 
 .DEFAULT_GOAL := build
@@ -88,12 +89,12 @@ LDFLAGS  := ${CFLAGS}
 .DELETE_ON_ERROR: ${OBJS} ${TARGET}.elf
 
 build: ${TARGET}
-	@chmod +x $<
+	chmod +x $<
 
 ## Strip binaries.
 ${TARGET}: ${TARGET}.elf
 	-@echo 'Stripping symbols from "$<"... ("$<"->"$@")'
-	${OBJCOPY} -v -g -O elf64-x86-64 $< $@
+	${OBJCOPY} -vgO elf64-x86-64 $< $@
 
 ## Link objects.
 ${TARGET}.elf: ${TARGET}.o ${OBJS}
@@ -108,8 +109,8 @@ ${OBJS}: %.o : %.c
 ## Install built file.
 install: ${TARGET}
 	-@echo 'Installing "$<"...'
-	@chmod +x $<
-	@cp -v $< ${DEST}
+	chown root:root $<
+	cp -vf $< ${DEST}
 
 ## Remove unnecessary binary files.
 .IGNORE: clean
