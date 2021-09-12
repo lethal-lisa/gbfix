@@ -243,7 +243,7 @@ uint16_t correctGlobalChksum (const PGBHEAD pHdr) {
 		return 0;
 	}
 	
-	if (pHdr->uGlobalChksum == 0) {
+	if (*pHdr->uGlobalChksum == 0) {
 		errno = EINVAL;
 		return 0;
 	}

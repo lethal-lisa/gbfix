@@ -34,7 +34,7 @@
 #include "gbfix.h"
 
 const char s_pszAppName[] = "GBFix";
-const char s_pszAppVer[] = "0.3.4-proto";
+const char s_pszAppVer[] = "0.3.5-proto";
 const char s_pszCopyright[] = "Copyright 2021 Lisa Murray";
 
 int doFileOperations (PRUN_PARAMS prp);
@@ -409,12 +409,14 @@ int doFileChecks (PRUN_PARAMS prp) {
 		while (((32 << uRomSizeNew) << 10) != st.st_size) uRomSizeNew++;
 		
 		if (prp->uFlags & RPF_DRYRUN) {
-			printf("Warning: ROM size (%ldkB (0x%X)) and file size (%ldkB) do not match! Should be updated to %ldkB (0x%X).\n", cbRom >> 10, prp->pHdr->uRomSize, st.st_size >> 10, uRomSizeNew >> 10, uRomSizeNew);
+			printf("Warning: ROM size (%ldkB (0x%X)) and file size (%ldkB) do not match! Should be updated to %dkB (0x%X).\n", cbRom >> 10, prp->pHdr->uRomSize, st.st_size >> 10, uRomSizeNew >> 10, uRomSizeNew);
 		} else {
 			prp->pHdrUps->uFlags |= UPF_ROMSIZE;
 			prp->pHdrUps->uRomSize = uRomSizeNew;
 		}
 	}
+
+	return 0;
 	
 }
 
