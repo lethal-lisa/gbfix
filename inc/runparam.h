@@ -43,10 +43,11 @@ enum {
 	UPF_LICENSE = 0x0008,
 	UPF_SGBF = 0x0010,
 	UPF_CARTTYPE = 0x0020,
-	UPF_RAMSIZE = 0x0040,
-	UPF_REGION = 0x0080,
-	UPF_ROMVER = 0x0100,
-	UPF_MASK = 0x01FF
+	UPF_ROMSIZE = 0x0040,
+	UPF_RAMSIZE = 0x0080,
+	UPF_REGION = 0x0100,
+	UPF_ROMVER = 0x0200,
+	UPF_MASK = 0x03FF
 };
 
 // ---------------------------------------------------------------------
@@ -78,6 +79,7 @@ typedef struct tagHDR_UPDATES
 	uint8_t uLicensee;
 	uint8_t uSgbFlag;
 	uint8_t uCartType;
+	uint8_t uRomSize;
 	uint8_t uRamSize;
 	uint8_t uRegion;
 	uint8_t uRomVer;

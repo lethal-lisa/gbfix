@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 // Include module header(s):
 #include "gbfix.h"
@@ -38,6 +39,7 @@ const char s_pszCopyright[] = "Copyright 2021 Lisa Murray";
 
 int doFileOperations (PRUN_PARAMS prp);
 static inline void validateChksums (PRUN_PARAMS prp);
+inline size_t getFileSize (const char* pszFileName);
 
 int main (int argc, char* argv[]) {
 	
@@ -205,7 +207,7 @@ int main (int argc, char* argv[]) {
 				break;
 				
 			case 'm':
-				// Set manufacturer.
+				// Set manufacturer code.
 				rpParams.uFlags |= RPF_UPDATEROM;
 				
 				rpParams.pHdrUps->uFlags |= UPF_MANU;
@@ -256,6 +258,7 @@ int main (int argc, char* argv[]) {
 			}
 		}
 	} else {
+		// Print out message explaining help.
 		fprintf(stderr, "Error: No options specified.\nUse %s -h to see options.\n", argv[0]);
 		setExitCode(&rpParams, EXIT_FAILURE);
 	}
@@ -355,15 +358,18 @@ static inline void validateChksums (PRUN_PARAMS prp) {
 	uint8_t uNewHdrChksum = mkGbHdrChksum(prp->pHdr);
 	// uint16_t uNewGlobalChksum = mkGbHdrGlobalChksum(prp->pgbHdr);
 	
+	// Update header checksum.
 	if (prp->pHdr->uHdrChksum != uNewHdrChksum) {
 		if (prp->uFlags & RPF_UPDATEROM) {
 			if (prp->uFlags & RPF_VERBOSE) printf("Updating header checksum to 0x%X.\n", uNewHdrChksum);
 			prp->pHdr->uHdrChksum = uNewHdrChksum;
 		} else {
-			printf("Warning: Header checksum is invalid. ROM will be unbootable! Correct value is 0x%X.\n", uNewHdrChksum);
+			printf("Warning: Header checksum is invalid. ROM will be unbootable on hardware! Correct value is 0x%X.\n", uNewHdrChksum);
 		}
 	}
 	
+	// Update global checksum.
+	printf("Warning: Global checksum checker not yet implemented.\n");
 	/*
 	if (correctGlobalChksum(prp->pgbHdr) != uNewGlobalChksum) {
 		if (prp->uFlags & RPF_UPDATEROM) {
@@ -375,6 +381,40 @@ will not care, but emulators might give warnings!\n");
 		}
 	}
 	*/
+	
+}
+
+int doFileChecks (PRUN_PARAMS prp) {
+	
+	// Stat the file.
+	struct stat st;
+	if (stat(prp->pszFileName, &st)) return 1;
+	
+	// Get the ROM size.
+	size_t cbRom;
+	if ((cbRom = getRomSizeInkB(prp->pHdr)) == 0) {
+		perror("Could not get ROM size field.\n");
+		errno = 0;
+	}
+	cbRom <<= 10; // Convert to bytes.
+	
+	// Compare the file size to the ROM size.
+	if (st.st_size != cbRom) {
+		
+		//prp->pHdrUps->uFlags |= UPF_ROMSIZE;
+		//prp->pHdrUps->uRomSize =
+		
+		// Get new ROM size.
+		uint8_t uRomSizeNew = 0;
+		while (((32 << uRomSizeNew) << 10) != st.st_size) uRomSizeNew++;
+		
+		if (prp->uFlags & RPF_DRYRUN) {
+			printf("Warning: ROM size (%ldkB (0x%X)) and file size (%ldkB) do not match! Should be updated to %ldkB (0x%X).\n", cbRom >> 10, prp->pHdr->uRomSize, st.st_size >> 10, uRomSizeNew >> 10, uRomSizeNew);
+		} else {
+			prp->pHdrUps->uFlags |= UPF_ROMSIZE;
+			prp->pHdrUps->uRomSize = uRomSizeNew;
+		}
+	}
 	
 }
 

@@ -109,6 +109,7 @@ ${OBJS}: %.o : %.c
 ## Install built file.
 install: ${TARGET}
 	-@echo 'Installing "$<"...'
+	chmod +x $<
 	chown root:root $<
 	cp -vf $< ${DEST}
 
