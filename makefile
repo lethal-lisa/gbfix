@@ -72,14 +72,15 @@ OBJCOPY  := objcopy
 
 CFLAGS   =  -Wall -O3\
 	-funsigned-char\
-	-fomit-frame-pointer -fno-strict-aliasing -fshort-enums\
-	-fno-printf-return-value
+	-fomit-frame-pointer -fno-strict-aliasing -fshort-enums
 
 ifdef INCLUDE
 	CFLAGS += ${INCLUDE}
 endif
 
 LDFLAGS  := ${CFLAGS}
+
+ARCH     := elf64-x86-64
 
 ## ---------------------------------------------------------------------
 ## Compilation rules.
@@ -94,7 +95,7 @@ build: ${TARGET}
 ## Strip binaries.
 ${TARGET}: ${TARGET}.elf
 	-@echo 'Stripping symbols from "$<"... ("$<"->"$@")'
-	${OBJCOPY} -vgO elf64-x86-64 $< $@
+	${OBJCOPY} -vgO ${ARCH} $< $@
 
 ## Link objects.
 ${TARGET}.elf: ${TARGET}.o ${OBJS}
